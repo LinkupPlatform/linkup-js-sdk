@@ -1,0 +1,7 @@
+{
+	"entryPoints": ["./src/index.ts"],
+	"out": "docs",
+	"name": "LinkUp SDK",
+	"excludePrivate": true,
+	"excludeProtected": true
+}

@@ -1,0 +1,48 @@
+{
+	"name": "linkup-js-sdk",
+	"version": "1.0.0",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"scripts": {
+		"build": "tsc",
+		"docs": "typedoc",
+		"docs:serve": "http-server docs",
+		"docs:watch": "typedoc --watch --preserveWatchOutput",
+		"docs:live": "npm run docs:watch & npm run docs:serve",
+		"watch": "tsc --watch",
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"keywords": [
+		"linkup",
+		"nodejs",
+		"api",
+		"sdk",
+		"client",
+		"search"
+	],
+	"author": "LINKUP TECHNOLOGIES",
+	"license": "MIT",
+	"description": "A Javascript Client SDK for the Linkup API",
+	"files": [
+		"dist"
+	],
+	"devDependencies": {
+		"@types/jest": "^29.5.14",
+		"@typescript-eslint/eslint-plugin": "^8.16.0",
+		"@typescript-eslint/parser": "^8.16.0",
+		"@types/node-fetch": "^2.6.4",
+		"eslint": "^9.15.0",
+		"eslint-config-prettier": "^9.1.0",
+		"eslint-plugin-prettier": "^5.2.1",
+		"http-server": "^14.1.1",
+		"jest": "^29.7.0",
+		"prettier": "^3.4.1",
+		"ts-jest": "^29.2.5",
+		"typedoc": "^0.27.0",
+		"typescript": "^5.7.2"
+	},
+	"dependencies": {
+		"node-fetch": "^2.6.7",
+		"typedoc-plugin-markdown": "^4.3.0"
+	}
+}
