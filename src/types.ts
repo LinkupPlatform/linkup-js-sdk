@@ -8,6 +8,7 @@ export interface ApiConfig {
 }
 
 export type SearchStructuredOutputSchema = Record<string, any>;
+
 export interface SearchParams {
 	query: string;
 	depth: SearchDepth;
@@ -15,10 +16,10 @@ export interface SearchParams {
 	structuredOutputSchema?: SearchStructuredOutputSchema;
 }
 
-export type DefaultSearchResponse = SourcedAnswer | SearchResults;
+export type LinkupSearchResponse = SourcedAnswer | SearchResults;
 
-export type SearchResponse<T> = T extends DefaultSearchResponse
-	? DefaultSearchResponse
+export type SearchResponse<T> = T extends LinkupSearchResponse
+	? LinkupSearchResponse
 	: T;
 
 export interface SourcedAnswer {

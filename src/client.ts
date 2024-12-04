@@ -1,13 +1,19 @@
 import {
+	LinkupAuthenticationError,
+	LinkupInsufficientCreditError,
+	LinkupInvalidRequestError,
+	LinkupNoResultError,
+	LinkupUnknownError,
+} from "./errors";
+import {
 	ApiConfig,
-	DefaultSearchResponse,
+	LinkupSearchResponse,
 	SearchOutputType,
 	SearchParams,
 	SearchResponse,
 	SearchResults,
 	SourcedAnswer,
 } from "./types";
-import { LinkUpError } from "./errors";
 import fetch from "node-fetch";
 
 export class LinkUpClient {
@@ -19,60 +25,35 @@ export class LinkUpClient {
 		this.baseUrl = config.baseUrl || "https://api.linkup.so/v1";
 	}
 
-	async search<T = DefaultSearchResponse>(
+	async search<T = LinkupSearchResponse>(
 		params: SearchParams
 	): Promise<SearchResponse<T>> {
-		try {
-			const searchParams = new URLSearchParams(this.getSearchParams(params));
-			const response = await fetch(`${this.baseUrl}/search?${searchParams}`, {
-				headers: {
-					Authorization: `Bearer ${this.apiKey}`,
-				},
-			});
+		const searchParams = new URLSearchParams(this.getSearchParams(params));
+		const response = await fetch(`${this.baseUrl}/search?${searchParams}`, {
+			headers: {
+				Authorization: `Bearer ${this.apiKey}`,
+			},
+		});
 
-			if (response.status !== 200) {
-				throw new LinkUpError(
-					`Failed to perform search, error code: ${response.statusText}`
-				);
-			}
-
-			const data = await response.json();
-
-			return this.validateSearchResponse<T>(data, params.outputType);
-		} catch (error) {
-			throw new LinkUpError(`Failed to perform search: ${error}`);
+		if (!response.ok) {
+			this.throwSearchError(response);
 		}
+
+		const data = await response.json();
+
+		return this.validateSearchResponse<T>(data, params.outputType);
 	}
 
 	private getSearchParams({
 		query,
 		depth,
 		outputType,
-		structuredOutputSchema,
 	}: SearchParams): Record<string, string> {
 		const searchParams: Record<string, string> = {
 			q: query,
 			depth,
 			outputType,
 		};
-
-		if (outputType === "structured") {
-			if (!structuredOutputSchema) {
-				throw new TypeError(
-					`A structuredOutputSchema must be provided when using outputType = 'structured'`
-				);
-			}
-
-			if (typeof structuredOutputSchema === "object") {
-				searchParams.structuredOutputSchema = JSON.stringify(
-					structuredOutputSchema
-				);
-			} else {
-				throw new TypeError(
-					`Unexpected structuredOutputSchema type: '${typeof structuredOutputSchema}'`
-				);
-			}
-		}
 
 		return searchParams;
 	}
@@ -95,5 +76,37 @@ export class LinkUpClient {
 			default:
 				return searchResponse as SearchResponse<T>;
 		}
+	}
+
+	private async throwSearchError(error: unknown): Promise<never> {
+		let errorMessage = "An unknown error occurred";
+
+		if (error instanceof fetch.Response) {
+			try {
+				const errorBody = await error.json();
+
+				if (errorBody && errorBody.message) {
+					errorMessage = errorBody.message;
+				}
+			} catch {
+				errorMessage = error.statusText || errorMessage;
+			}
+
+			switch (error.status) {
+				case 400:
+					if (errorMessage === "The query did not yield any result") {
+						throw new LinkupNoResultError(errorMessage);
+					}
+					throw new LinkupInvalidRequestError(errorMessage);
+				case 403:
+					throw new LinkupAuthenticationError(errorMessage);
+				case 429:
+					throw new LinkupInsufficientCreditError(errorMessage);
+				default:
+					throw new LinkupUnknownError(errorMessage);
+			}
+		}
+
+		throw new LinkupUnknownError(errorMessage);
 	}
 }
