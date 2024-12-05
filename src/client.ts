@@ -14,7 +14,7 @@ import {
 	SearchResults,
 	SourcedAnswer,
 } from "./types";
-import fetch from "node-fetch";
+import fetch from "cross-fetch";
 
 export class LinkUpClient {
 	private readonly apiKey: string;
@@ -36,7 +36,7 @@ export class LinkUpClient {
 		});
 
 		if (!response.ok) {
-			this.throwSearchError(response);
+			await this.throwSearchError(response);
 		}
 
 		const data = await response.json();
@@ -81,15 +81,20 @@ export class LinkUpClient {
 	private async throwSearchError(error: unknown): Promise<never> {
 		let errorMessage = "An unknown error occurred";
 
-		if (error instanceof fetch.Response) {
-			try {
-				const errorBody = await error.json();
+		if (
+			error &&
+			typeof error === "object" &&
+			"status" in error &&
+			"json" in error
+		) {
+			const errorWithJson = error as {
+				status: number;
+				json: () => Promise<any>;
+			};
+			const errorBody = await errorWithJson.json().catch(() => null);
 
-				if (errorBody && errorBody.message) {
-					errorMessage = errorBody.message;
-				}
-			} catch {
-				errorMessage = error.statusText || errorMessage;
+			if (errorBody && errorBody.message) {
+				errorMessage = errorBody.message;
 			}
 
 			switch (error.status) {
