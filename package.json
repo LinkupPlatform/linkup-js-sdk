@@ -1,5 +1,5 @@
 {
-	"name": "linkup-js-sdk",
+	"name": "linkup-sdk",
 	"version": "1.0.0",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
@@ -19,8 +19,12 @@
 		"client",
 		"search"
 	],
-	"author": "LINKUP TECHNOLOGIES",
+	"author": "Linkup",
 	"license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LinkupPlatform/linkup-js-sdk"
+  },
 	"description": "A Javascript Client SDK for the Linkup API",
 	"files": [
 		"dist/**/*"
