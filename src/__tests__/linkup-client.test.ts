@@ -8,6 +8,7 @@ import {
   LinkupNoResultError,
   LinkupUnknownError,
 } from '../errors';
+import { z } from 'zod';
 
 jest.mock('axios');
 const maxios = axios as jest.Mocked<typeof axios>;
@@ -15,15 +16,21 @@ const maxios = axios as jest.Mocked<typeof axios>;
 describe('LinkupClient', () => {
   const underTest = new LinkupClient({ apiKey: '1234' });
 
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it('should make a successful API call with correct parameters', async () => {
     maxios.post.mockResolvedValueOnce({
       data: { answer: '' },
     } as AxiosResponse);
+
     await underTest.search({
       query: 'foo',
       depth: 'deep',
       outputType: 'sourcedAnswer',
     } as SearchParams);
+
     expect(maxios.post).toHaveBeenCalledWith(
       '/search',
       {
@@ -47,29 +54,23 @@ describe('LinkupClient', () => {
       apiKey: '1234',
       baseUrl: 'http://foo.bar/baz',
     });
+
     maxios.post.mockResolvedValueOnce({
       data: { answer: '' },
     } as AxiosResponse);
+
     await client.search({
       query: 'foo',
       depth: 'deep',
       outputType: 'sourcedAnswer',
     });
+
     expect(maxios.post).toHaveBeenCalledWith(
-      '/search',
-      {
-        q: 'foo',
-        depth: 'deep',
-        includeImages: false,
-        outputType: 'sourcedAnswer',
-      },
-      {
+      expect.anything(),
+      expect.anything(),
+      expect.objectContaining({
         baseURL: 'http://foo.bar/baz',
-        headers: {
-          Authorization: 'Bearer 1234',
-          'User-Agent': 'Linkup-JS-SDK/1.0.0',
-        },
-      },
+      }),
     );
   });
 
@@ -102,7 +103,7 @@ describe('LinkupClient', () => {
     expect(result).toHaveProperty('results');
   });
 
-  it('should handle structured output type', async () => {
+  it('should handle structured output type using JSON schema', async () => {
     maxios.post.mockResolvedValueOnce({
       data: 'foo',
     } as AxiosResponse);
@@ -115,6 +116,30 @@ describe('LinkupClient', () => {
     });
 
     expect(result).toEqual('foo');
+  });
+
+  it('should handle structured output type using Zod schema', async () => {
+    maxios.post.mockResolvedValueOnce({
+      data: 'foo',
+    } as AxiosResponse);
+
+    await underTest.search({
+      query: 'foo',
+      depth: 'standard',
+      outputType: 'structured',
+      structuredOutputSchema: z.object({ foo: z.string() }),
+    });
+
+    expect(maxios.post).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        q: 'foo',
+        structuredOutputSchema: expect.stringContaining(
+          '"foo":{"type":"string"}',
+        ),
+      }),
+      expect.anything(),
+    );
   });
 
   it('should refine errors', async () => {
@@ -190,6 +215,7 @@ describe('LinkupClient', () => {
         data: { message: ['foo', 'bar'] },
       },
     });
+
     await underTest
       .search({} as SearchParams)
       .catch((e) => expect(e).toBeInstanceOf(LinkupInvalidRequestError));

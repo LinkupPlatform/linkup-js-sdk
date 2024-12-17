@@ -21,10 +21,10 @@
 	],
 	"author": "Linkup",
 	"license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/LinkupPlatform/linkup-js-sdk"
-  },
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/LinkupPlatform/linkup-js-sdk"
+	},
 	"description": "A Javascript Client SDK for the Linkup API",
 	"files": [
 		"dist/**/*"
@@ -47,6 +47,8 @@
 		"typescript": "^5.7.2"
 	},
 	"dependencies": {
-		"axios": "^1.7.9"
+		"axios": "^1.7.9",
+		"zod": "^3.24.1",
+		"zod-to-json-schema": "^3.24.1"
 	}
 }

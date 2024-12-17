@@ -1,3 +1,5 @@
+import { ZodObject, ZodRawShape } from 'zod';
+
 export type SearchDepth = 'standard' | 'deep';
 
 export type SearchOutputType = 'sourcedAnswer' | 'searchResults' | 'structured';
@@ -7,7 +9,9 @@ export interface ApiConfig {
   baseUrl?: string;
 }
 
-export type StructuredOutputSchema = Record<string, unknown>;
+export type StructuredOutputSchema =
+  | Record<string, unknown>
+  | ZodObject<ZodRawShape>;
 
 export interface SearchParams<T extends SearchOutputType = SearchOutputType> {
   query: string;

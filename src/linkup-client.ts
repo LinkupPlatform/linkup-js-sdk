@@ -16,6 +16,9 @@ import {
   SourcedAnswer,
 } from './types';
 import { getVersionFromPackage } from './utils/version.utils';
+import zodToJsonSchema from 'zod-to-json-schema';
+import { ZodObject, ZodRawShape } from 'zod';
+import { isZodObject } from './utils/schema.utils';
 
 export class LinkupClient {
   private readonly USER_AGENT = `Linkup-JS-SDK/${getVersionFromPackage()}`;
@@ -62,7 +65,9 @@ export class LinkupClient {
 
     if (structuredOutputSchema) {
       searchParams.structuredOutputSchema = JSON.stringify(
-        structuredOutputSchema,
+        isZodObject(structuredOutputSchema)
+          ? zodToJsonSchema(structuredOutputSchema as ZodObject<ZodRawShape>)
+          : structuredOutputSchema,
       );
     }
 
