@@ -9,6 +9,7 @@ jobs:
     uses: ./.github/workflows/_run-tests.yaml
 
   build-and-publish:
+    needs: run-tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
