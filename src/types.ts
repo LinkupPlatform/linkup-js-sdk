@@ -13,7 +13,7 @@ export type StructuredOutputSchema =
   | Record<string, unknown>
   | ZodObject<ZodRawShape>;
 
-export interface SearchParams<T extends SearchOutputType = SearchOutputType> {
+export interface SearchParams<T extends SearchOutputType> {
   query: string;
   depth: SearchDepth;
   outputType: T;
@@ -21,11 +21,13 @@ export interface SearchParams<T extends SearchOutputType = SearchOutputType> {
   structuredOutputSchema?: StructuredOutputSchema;
 }
 
-export type LinkupSearchResponse<T extends SearchOutputType> = {
-  sourcedAnswer: SourcedAnswer;
-  searchResults: SearchResults;
-  structured: unknown;
-}[T];
+export type LinkupSearchResponse<T> = T extends 'sourcedAnswer'
+  ? SourcedAnswer
+  : T extends 'searchResults'
+    ? SearchResults
+    : T extends 'structured'
+      ? StructuredOutputSchema
+      : never;
 
 export interface SourcedAnswer {
   answer: string;

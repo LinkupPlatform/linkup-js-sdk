@@ -9,11 +9,12 @@ import {
 } from './errors';
 import {
   ApiConfig,
-  LinkupSearchResponse,
   SearchOutputType,
   SearchParams,
   SearchResults,
   SourcedAnswer,
+  StructuredOutputSchema,
+  LinkupSearchResponse,
 } from './types';
 import { getVersionFromPackage } from './utils/version.utils';
 import zodToJsonSchema from 'zod-to-json-schema';
@@ -30,9 +31,17 @@ export class LinkupClient {
     this.baseUrl = config.baseUrl || 'https://api.linkup.so/v1';
   }
 
-  async search<T extends SearchOutputType>(
+  async search<T extends 'sourcedAnswer' | 'searchResults' | 'structured'>(
     params: SearchParams<T>,
-  ): Promise<LinkupSearchResponse<T>> {
+  ): Promise<
+    T extends 'sourcedAnswer'
+      ? SourcedAnswer
+      : T extends 'searchResults'
+        ? SearchResults
+        : T extends 'structured'
+          ? StructuredOutputSchema
+          : never
+  > {
     return axios
       .post('/search', this.sanitizeParams(params), {
         baseURL: this.baseUrl,
@@ -49,13 +58,13 @@ export class LinkupClient {
       });
   }
 
-  private sanitizeParams({
+  private sanitizeParams<T extends SearchOutputType>({
     query,
     depth,
     outputType,
     includeImages = false,
     structuredOutputSchema,
-  }: SearchParams): Record<string, string | boolean> {
+  }: SearchParams<T>): Record<string, string | boolean> {
     const searchParams: Record<string, string | boolean> = {
       q: query,
       depth,
@@ -74,9 +83,9 @@ export class LinkupClient {
     return searchParams;
   }
 
-  private formatResponse<T extends SearchOutputType>(
+  private formatResponse<T>(
     searchResponse: unknown,
-    outputType: T,
+    outputType: SearchOutputType,
   ): LinkupSearchResponse<T> {
     switch (outputType) {
       case 'sourcedAnswer':

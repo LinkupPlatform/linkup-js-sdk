@@ -29,7 +29,7 @@ describe('LinkupClient', () => {
       query: 'foo',
       depth: 'deep',
       outputType: 'sourcedAnswer',
-    } as SearchParams);
+    });
 
     expect(maxios.post).toHaveBeenCalledWith(
       '/search',
@@ -146,7 +146,7 @@ describe('LinkupClient', () => {
     // Non Axios error
     maxios.post.mockRejectedValueOnce(new Error('unknown'));
     await underTest
-      .search({} as SearchParams)
+      .search({} as SearchParams<'sourcedAnswer'>)
       .catch((e) => expect(e).toBeInstanceOf(LinkupUnknownError));
 
     // 400 invalid
@@ -155,7 +155,7 @@ describe('LinkupClient', () => {
       response: { status: 400, data: { message: '' } },
     });
     await underTest
-      .search({} as SearchParams)
+      .search({} as SearchParams<'sourcedAnswer'>)
       .catch((e) => expect(e).toBeInstanceOf(LinkupInvalidRequestError));
 
     // 400 empty result
@@ -167,7 +167,7 @@ describe('LinkupClient', () => {
       },
     });
     await underTest
-      .search({} as SearchParams)
+      .search({} as SearchParams<'sourcedAnswer'>)
       .catch((e) => expect(e).toBeInstanceOf(LinkupNoResultError));
 
     // 403
@@ -179,7 +179,7 @@ describe('LinkupClient', () => {
       },
     });
     await underTest
-      .search({} as SearchParams)
+      .search({} as SearchParams<'sourcedAnswer'>)
       .catch((e) => expect(e).toBeInstanceOf(LinkupAuthenticationError));
 
     // 429
@@ -191,7 +191,7 @@ describe('LinkupClient', () => {
       },
     });
     await underTest
-      .search({} as SearchParams)
+      .search({} as SearchParams<'sourcedAnswer'>)
       .catch((e) => expect(e).toBeInstanceOf(LinkupInsufficientCreditError));
 
     // 500
@@ -203,7 +203,7 @@ describe('LinkupClient', () => {
       },
     });
     await underTest
-      .search({} as SearchParams)
+      .search({} as SearchParams<'sourcedAnswer'>)
       .catch((e) => expect(e).toBeInstanceOf(LinkupUnknownError));
   });
 
@@ -217,7 +217,7 @@ describe('LinkupClient', () => {
     });
 
     await underTest
-      .search({} as SearchParams)
+      .search({} as SearchParams<'sourcedAnswer'>)
       .catch((e) => expect(e).toBeInstanceOf(LinkupInvalidRequestError));
   });
 });
