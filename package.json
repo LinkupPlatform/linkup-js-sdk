@@ -1,29 +1,37 @@
 {
-	"name": "linkup-js-sdk",
+	"name": "linkup-sdk",
 	"version": "1.0.0",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"scripts": {
 		"build": "tsc",
 		"watch": "tsc --watch",
-		"test": "jest --coverage",
-		"test:watch": "jest --watch --silent=false --coverage "
+		"test": "jest",
+		"lint": "eslint src/**/*.ts",
+		"format": "prettier --write \"src/**/*.ts\""
 	},
 	"keywords": [
 		"linkup",
+		"llm",
 		"nodejs",
 		"api",
 		"sdk",
 		"client",
 		"search"
 	],
-	"author": "LINKUP TECHNOLOGIES",
+	"author": "Linkup",
 	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/LinkupPlatform/linkup-js-sdk"
+	},
 	"description": "A Javascript Client SDK for the Linkup API",
 	"files": [
-		"dist"
+		"dist/**/*"
 	],
 	"devDependencies": {
+		"@eslint/eslintrc": "^3.2.0",
+		"@eslint/js": "^9.17.0",
 		"@types/jest": "^29.5.14",
 		"@types/node-fetch": "^2.6.4",
 		"@typescript-eslint/eslint-plugin": "^8.16.0",
@@ -31,6 +39,7 @@
 		"eslint": "^9.15.0",
 		"eslint-config-prettier": "^9.1.0",
 		"eslint-plugin-prettier": "^5.2.1",
+		"globals": "^15.13.0",
 		"jest": "^29.7.0",
 		"prettier": "^3.4.1",
 		"ts-jest": "^29.2.5",
@@ -38,6 +47,8 @@
 		"typescript": "^5.7.2"
 	},
 	"dependencies": {
-		"cross-fetch": "^4.0.0"
+		"axios": "^1.7.9",
+		"zod": "^3.24.1",
+		"zod-to-json-schema": "^3.24.1"
 	}
 }

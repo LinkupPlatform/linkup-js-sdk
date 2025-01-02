@@ -1,40 +1,47 @@
-export type SearchDepth = "standard" | "deep";
+import { ZodObject, ZodRawShape } from 'zod';
 
-export type SearchOutputType = "sourcedAnswer" | "searchResults" | "structured";
+export type SearchDepth = 'standard' | 'deep';
+
+export type SearchOutputType = 'sourcedAnswer' | 'searchResults' | 'structured';
 
 export interface ApiConfig {
-	apiKey: string;
-	baseUrl?: string;
+  apiKey: string;
+  baseUrl?: string;
 }
 
-export type SearchStructuredOutputSchema = Record<string, any>;
+export type StructuredOutputSchema =
+  | Record<string, unknown>
+  | ZodObject<ZodRawShape>;
 
-export interface SearchParams {
-	query: string;
-	depth: SearchDepth;
-	outputType: SearchOutputType;
-	structuredOutputSchema?: SearchStructuredOutputSchema;
+export interface SearchParams<T extends SearchOutputType> {
+  query: string;
+  depth: SearchDepth;
+  outputType: T;
+  includeImages?: boolean;
+  structuredOutputSchema?: StructuredOutputSchema;
 }
 
-export type LinkupSearchResponse = SourcedAnswer | SearchResults;
-
-export type SearchResponse<T> = T extends LinkupSearchResponse
-	? LinkupSearchResponse
-	: T;
+export type LinkupSearchResponse<T> = T extends 'sourcedAnswer'
+  ? SourcedAnswer
+  : T extends 'searchResults'
+    ? SearchResults
+    : T extends 'structured'
+      ? StructuredOutputSchema
+      : never;
 
 export interface SourcedAnswer {
-	answer: string;
-	sources: {
-		name: string;
-		url: string;
-		snippet: string;
-	}[];
+  answer: string;
+  sources: {
+    name: string;
+    url: string;
+    snippet: string;
+  }[];
 }
 
 export interface SearchResults {
-	results: {
-		name: string;
-		url: string;
-		content: string;
-	}[];
+  results: {
+    name: string;
+    url: string;
+    content: string;
+  }[];
 }
