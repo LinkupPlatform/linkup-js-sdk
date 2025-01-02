@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 A JS/TS SDK for the [Linkup API](https://linkup-api.readme.io/reference/getting-started), allowing
-easy integration with Linkup's services. 🐍
+easy integration with Linkup's services.
 
 ## 🌟 Features
 
