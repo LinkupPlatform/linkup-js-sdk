@@ -43,7 +43,7 @@ describe('LinkupClient', () => {
         baseURL: 'https://api.linkup.so/v1',
         headers: {
           Authorization: 'Bearer 1234',
-          'User-Agent': 'Linkup-JS-SDK/1.0.0',
+          'User-Agent': 'Linkup-JS-SDK/1.0.1',
         },
       },
     );
