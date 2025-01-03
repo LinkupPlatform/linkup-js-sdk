@@ -9,6 +9,8 @@ import {
   LinkupUnknownError,
 } from '../errors';
 import { z } from 'zod';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 jest.mock('axios');
 const maxios = axios as jest.Mocked<typeof axios>;
@@ -43,7 +45,7 @@ describe('LinkupClient', () => {
         baseURL: 'https://api.linkup.so/v1',
         headers: {
           Authorization: 'Bearer 1234',
-          'User-Agent': 'Linkup-JS-SDK/1.0.1',
+          'User-Agent': `Linkup-JS-SDK/${getVersionFromPackage()}`,
         },
       },
     );
@@ -221,3 +223,13 @@ describe('LinkupClient', () => {
       .catch((e) => expect(e).toBeInstanceOf(LinkupInvalidRequestError));
   });
 });
+
+function getVersionFromPackage(): string {
+  try {
+    const packagePath = join(__dirname, '..', '..', 'package.json');
+    const packageJson = JSON.parse(readFileSync(packagePath, 'utf8'));
+    return packageJson.version;
+  } catch {
+    throw new Error('Could not read package version');
+  }
+}

@@ -16,13 +16,12 @@ import {
   StructuredOutputSchema,
   LinkupSearchResponse,
 } from './types';
-import { getVersionFromPackage } from './utils/version.utils';
 import zodToJsonSchema from 'zod-to-json-schema';
 import { ZodObject, ZodRawShape } from 'zod';
 import { isZodObject } from './utils/schema.utils';
 
 export class LinkupClient {
-  private readonly USER_AGENT = `Linkup-JS-SDK/${getVersionFromPackage()}`;
+  private readonly USER_AGENT = 'Linkup-JS-SDK/1.0.1';
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
