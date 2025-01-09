@@ -1,6 +1,11 @@
 import { LinkupClient } from '../linkup-client';
 import axios, { AxiosResponse } from 'axios';
-import { SearchParams } from '../types';
+import {
+  ImageSearchResult,
+  SearchParams,
+  Source,
+  TextSearchResult,
+} from '../types';
 import {
   LinkupAuthenticationError,
   LinkupInsufficientCreditError,
@@ -78,7 +83,27 @@ describe('LinkupClient', () => {
 
   it('should handle sourcedAnswer output type', async () => {
     maxios.post.mockResolvedValueOnce({
-      data: { answer: 'foo', sources: [] },
+      data: {
+        answer: 'foo',
+        sources: [
+          {
+            name: 'foo',
+            url: 'http://foo.bar/baz',
+            snippet: 'foo bar baz',
+          },
+          {
+            type: 'text',
+            name: 'bar',
+            url: 'http://foo.bar/baz',
+            content: 'foo bar baz',
+          },
+          {
+            type: 'image',
+            name: 'baz',
+            url: 'http://foo.bar/baz',
+          },
+        ],
+      },
     } as AxiosResponse);
 
     const result = await underTest.search({
@@ -88,7 +113,22 @@ describe('LinkupClient', () => {
     });
 
     expect(result.answer).toEqual('foo');
-    expect(result).toHaveProperty('sources');
+    expect((result.sources.at(0) as Source)?.name).toEqual('foo');
+    expect((result.sources.at(0) as Source)?.url).toEqual('http://foo.bar/baz');
+    expect((result.sources.at(0) as Source)?.snippet).toEqual('foo bar baz');
+    expect((result.sources.at(1) as TextSearchResult)?.type).toEqual('text');
+    expect((result.sources.at(1) as TextSearchResult)?.name).toEqual('bar');
+    expect((result.sources.at(1) as TextSearchResult)?.url).toEqual(
+      'http://foo.bar/baz',
+    );
+    expect((result.sources.at(1) as TextSearchResult)?.content).toEqual(
+      'foo bar baz',
+    );
+    expect((result.sources.at(2) as ImageSearchResult)?.type).toEqual('image');
+    expect((result.sources.at(2) as ImageSearchResult)?.name).toEqual('baz');
+    expect((result.sources.at(2) as ImageSearchResult)?.url).toEqual(
+      'http://foo.bar/baz',
+    );
   });
 
   it('should handle searchResults output type', async () => {

@@ -29,19 +29,30 @@ export type LinkupSearchResponse<T> = T extends 'sourcedAnswer'
       ? StructuredOutputSchema
       : never;
 
-export interface SourcedAnswer {
-  answer: string;
-  sources: {
-    name: string;
-    url: string;
-    snippet: string;
-  }[];
+export interface SearchResults {
+  results: (TextSearchResult | ImageSearchResult)[];
 }
 
-export interface SearchResults {
-  results: {
-    name: string;
-    url: string;
-    content: string;
-  }[];
+export interface TextSearchResult {
+  type: 'text';
+  name: string;
+  url: string;
+  content: string;
+}
+
+export interface ImageSearchResult {
+  type: 'image';
+  name: string;
+  url: string;
+}
+
+export interface SourcedAnswer {
+  answer: string;
+  sources: (Source | TextSearchResult | ImageSearchResult)[];
+}
+
+export interface Source {
+  name: string;
+  url: string;
+  snippet: string;
 }
