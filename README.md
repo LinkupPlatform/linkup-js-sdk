@@ -2,6 +2,7 @@
 
 [![npm package](https://badge.fury.io/js/linkup-sdk.svg)](https://www.npmjs.com/package/linkup-sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![downloads](https://img.shields.io/npm/dm/linkup-sdk.svg)](https://www.npmjs.com/package/linkup-sdk)
 
 A JS/TS SDK for the [Linkup API](https://linkup-api.readme.io/reference/getting-started), allowing
 easy integration with Linkup's services.
