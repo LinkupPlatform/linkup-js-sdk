@@ -41,13 +41,18 @@ export class LinkupClient {
           ? StructuredOutputSchema
           : never
   > {
+    let headers: Record<string, string> = {
+      Authorization: `Bearer ${this.apiKey}`,
+    };
+
+    if (typeof window === 'undefined') {
+      headers['User-Agent'] = this.USER_AGENT;
+    }
+
     return axios
       .post('/search', this.sanitizeParams(params), {
         baseURL: this.baseUrl,
-        headers: {
-          'User-Agent': this.USER_AGENT,
-          Authorization: `Bearer ${this.apiKey}`,
-        },
+        headers,
       })
       .then((response) =>
         this.formatResponse<T>(response.data, params.outputType),
