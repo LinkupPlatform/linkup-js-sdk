@@ -1,4 +1,4 @@
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 import {
   LinkupAuthenticationError,
   LinkupError,
@@ -15,13 +15,15 @@ import {
   SourcedAnswer,
   StructuredOutputSchema,
   LinkupSearchResponse,
+  LinkupApiError,
 } from './types';
 import zodToJsonSchema from 'zod-to-json-schema';
 import { ZodObject, ZodRawShape } from 'zod';
-import { isZodObject } from './utils/schema.utils';
+import { isZodObject, concatErrorAndDetails } from './utils';
+import { linkupUserAgent } from '.';
 
 export class LinkupClient {
-  private readonly USER_AGENT = 'Linkup-JS-SDK/1.0.3';
+  private readonly USER_AGENT = linkupUserAgent;
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
@@ -58,7 +60,7 @@ export class LinkupClient {
         this.formatResponse<T>(response.data, params.outputType),
       )
       .catch((e) => {
-        throw this.refineError(e);
+        throw this.refineError(e.response.data);
       });
   }
 
@@ -107,36 +109,25 @@ export class LinkupClient {
     }
   }
 
-  private refineError(error: Error): LinkupError {
-    const unknownErrorMessage = `An unknown error occurred: ${error.message}`;
+  private refineError(e: LinkupApiError): LinkupError {
+    const { statusCode, error } = e;
+    const { code, message } = error;
 
-    if (
-      !axios.isAxiosError(error) ||
-      !error.response ||
-      !('message' in error.response.data)
-    ) {
-      return new LinkupUnknownError(unknownErrorMessage);
-    }
-
-    const {
-      data: { message },
-      status,
-    } = (error as AxiosError<{ message: string }, unknown>).response!;
-
-    switch (status) {
+    switch (statusCode) {
       case 400:
-        if (message === 'The query did not yield any result') {
-          return new LinkupNoResultError();
+        if (code === 'SEARCH_QUERY_NO_RESULT') {
+          return new LinkupNoResultError(message);
         }
-        return new LinkupInvalidRequestError(
-          Array.isArray(message) ? message.join(',') : message,
-        );
+        return new LinkupInvalidRequestError(concatErrorAndDetails(e));
+      case 401:
       case 403:
-        return new LinkupAuthenticationError();
+        return new LinkupAuthenticationError(message);
       case 429:
-        return new LinkupInsufficientCreditError();
+        return new LinkupInsufficientCreditError(message);
       default:
-        return new LinkupUnknownError(unknownErrorMessage);
+        return new LinkupUnknownError(
+          `An unknown error occurred: ${error.message}`,
+        );
     }
   }
 }

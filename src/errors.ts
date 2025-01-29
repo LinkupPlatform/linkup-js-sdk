@@ -1,3 +1,8 @@
+export type LinkupErrorDetail = {
+  field: string;
+  message: string;
+};
+
 export abstract class LinkupError extends Error {}
 
 // Invalid request error, raised when the Linkup API returns a 400 status code.
@@ -6,6 +11,7 @@ export abstract class LinkupError extends Error {}
 export class LinkupInvalidRequestError extends LinkupError {
   constructor(message: string) {
     super(message);
+
     this.name = LinkupInvalidRequestError.name;
 
     if ('captureStackTrace' in Error) {
@@ -29,7 +35,7 @@ export class LinkupNoResultError extends LinkupError {
 
 // Authentication error, raised when the Linkup API returns a 403 status code.
 // It is returned when there is an authentication issue, typically when the API key is not valid.
-export class LinkupAuthenticationError extends LinkupError {
+export class LinkupAuthenticationError extends Error {
   constructor(message?: string) {
     super(message);
     this.name = LinkupAuthenticationError.name;

@@ -1,7 +1,12 @@
 import { LinkupClient } from '../linkup-client';
-import axios, { AxiosResponse } from 'axios';
+import axios, {
+  AxiosError,
+  AxiosResponse,
+  InternalAxiosRequestConfig,
+} from 'axios';
 import {
   ImageSearchResult,
+  LinkupApiError,
   SearchParams,
   Source,
   TextSearchResult,
@@ -14,8 +19,7 @@ import {
   LinkupUnknownError,
 } from '../errors';
 import { z } from 'zod';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { linkupUserAgent } from '..';
 
 jest.mock('axios');
 const maxios = axios as jest.Mocked<typeof axios>;
@@ -50,7 +54,7 @@ describe('LinkupClient', () => {
         baseURL: 'https://api.linkup.so/v1',
         headers: {
           Authorization: 'Bearer 1234',
-          'User-Agent': `Linkup-JS-SDK/${getVersionFromPackage()}`,
+          'User-Agent': linkupUserAgent,
         },
       },
     );
@@ -185,91 +189,132 @@ describe('LinkupClient', () => {
   });
 
   it('should refine errors', async () => {
-    // Non Axios error
-    maxios.post.mockRejectedValueOnce(new Error('unknown'));
-    await underTest
-      .search({} as SearchParams<'sourcedAnswer'>)
-      .catch((e) => expect(e).toBeInstanceOf(LinkupUnknownError));
-
     // 400 invalid
-    maxios.isAxiosError.mockReturnValueOnce(true);
-    maxios.post.mockRejectedValueOnce({
-      response: { status: 400, data: { message: '' } },
-    });
-    await underTest
-      .search({} as SearchParams<'sourcedAnswer'>)
-      .catch((e) => expect(e).toBeInstanceOf(LinkupInvalidRequestError));
+    let invalidError: LinkupApiError = {
+      statusCode: 400,
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Validation failed',
+        details: [
+          {
+            field: 'outputType',
+            message:
+              'outputType must be one of the following values: sourcedAnswer, searchResults, structured',
+          },
+        ],
+      },
+    };
+    maxios.post.mockRejectedValueOnce(generateAxiosError(invalidError));
+
+    await expect(
+      underTest.search({} as SearchParams<'sourcedAnswer'>),
+    ).rejects.toThrow(
+      new LinkupInvalidRequestError(
+        'Validation failed outputType must be one of the following values: sourcedAnswer, searchResults, structured',
+      ),
+    );
 
     // 400 empty result
-    maxios.isAxiosError.mockReturnValueOnce(true);
-    maxios.post.mockRejectedValueOnce({
-      response: {
-        status: 400,
-        data: { message: 'The query did not yield any result' },
+    invalidError = {
+      statusCode: 400,
+      error: {
+        code: 'SEARCH_QUERY_NO_RESULT',
+        message: 'The query did not yield any result',
+        details: [],
       },
-    });
-    await underTest
-      .search({} as SearchParams<'sourcedAnswer'>)
-      .catch((e) => expect(e).toBeInstanceOf(LinkupNoResultError));
+    };
+    maxios.isAxiosError.mockReturnValueOnce(true);
+    maxios.post.mockRejectedValueOnce(generateAxiosError(invalidError));
+
+    await expect(
+      underTest.search({} as SearchParams<'sourcedAnswer'>),
+    ).rejects.toThrow(new LinkupNoResultError(invalidError.error.message));
+
+    // 401
+    invalidError = {
+      statusCode: 401,
+      error: {
+        code: 'UNAUTHORIZED',
+        message: 'Unauthorized action',
+        details: [],
+      },
+    };
+    maxios.post.mockRejectedValueOnce(generateAxiosError(invalidError));
+
+    await expect(
+      underTest.search({} as SearchParams<'sourcedAnswer'>),
+    ).rejects.toThrow(
+      new LinkupAuthenticationError(invalidError.error.message),
+    );
 
     // 403
-    maxios.isAxiosError.mockReturnValueOnce(true);
-    maxios.post.mockRejectedValueOnce({
-      response: {
-        status: 403,
-        data: { message: '' },
+    invalidError = {
+      statusCode: 403,
+      error: {
+        code: 'FORBIDDEN',
+        message: 'Forbidden action',
+        details: [],
       },
-    });
-    await underTest
-      .search({} as SearchParams<'sourcedAnswer'>)
-      .catch((e) => expect(e).toBeInstanceOf(LinkupAuthenticationError));
+    };
+    maxios.post.mockRejectedValueOnce(generateAxiosError(invalidError));
+
+    await expect(
+      underTest.search({} as SearchParams<'sourcedAnswer'>),
+    ).rejects.toThrow(
+      new LinkupAuthenticationError(invalidError.error.message),
+    );
 
     // 429
-    maxios.isAxiosError.mockReturnValueOnce(true);
-    maxios.post.mockRejectedValueOnce({
-      response: {
-        status: 429,
-        data: { message: '' },
+    invalidError = {
+      statusCode: 429,
+      error: {
+        code: 'INSUFFICIENT_CREDITS',
+        message: 'You do not have enough credits to perform this request.',
+        details: [],
       },
-    });
-    await underTest
-      .search({} as SearchParams<'sourcedAnswer'>)
-      .catch((e) => expect(e).toBeInstanceOf(LinkupInsufficientCreditError));
+    };
+    maxios.post.mockRejectedValueOnce(generateAxiosError(invalidError));
+
+    await expect(
+      underTest.search({} as SearchParams<'sourcedAnswer'>),
+    ).rejects.toThrow(
+      new LinkupInsufficientCreditError(invalidError.error.message),
+    );
 
     // 500
-    maxios.isAxiosError.mockReturnValueOnce(true);
-    maxios.post.mockRejectedValueOnce({
-      response: {
-        status: 500,
-        data: { message: '' },
+    invalidError = {
+      statusCode: 500,
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Internal server error',
+        details: [],
       },
-    });
-    await underTest
-      .search({} as SearchParams<'sourcedAnswer'>)
-      .catch((e) => expect(e).toBeInstanceOf(LinkupUnknownError));
-  });
+    };
+    maxios.post.mockRejectedValueOnce(generateAxiosError(invalidError));
 
-  it('should handle array error message', async () => {
-    maxios.isAxiosError.mockReturnValueOnce(true);
-    maxios.post.mockRejectedValueOnce({
-      response: {
-        status: 400,
-        data: { message: ['foo', 'bar'] },
-      },
-    });
-
-    await underTest
-      .search({} as SearchParams<'sourcedAnswer'>)
-      .catch((e) => expect(e).toBeInstanceOf(LinkupInvalidRequestError));
+    await expect(
+      underTest.search({} as SearchParams<'sourcedAnswer'>),
+    ).rejects.toThrow(
+      new LinkupUnknownError(
+        `An unknown error occurred: ${invalidError.error.message}`,
+      ),
+    );
   });
 });
 
-function getVersionFromPackage(): string {
-  try {
-    const packagePath = join(__dirname, '..', '..', 'package.json');
-    const packageJson = JSON.parse(readFileSync(packagePath, 'utf8'));
-    return packageJson.version;
-  } catch {
-    throw new Error('Could not read package version');
-  }
-}
+const generateAxiosError = (e: LinkupApiError): AxiosError => {
+  return {
+    isAxiosError: true,
+    name: e.error.code,
+    message: e.error.message,
+    response: {
+      data: e,
+      status: e.statusCode,
+      statusText: e.error.message,
+      headers: {},
+      config: {} as InternalAxiosRequestConfig,
+    },
+    config: {} as InternalAxiosRequestConfig,
+    toJSON: () => ({}),
+  };
+};
