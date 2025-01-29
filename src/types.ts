@@ -56,3 +56,15 @@ export interface Source {
   url: string;
   snippet: string;
 }
+
+export type LinkupApiError = {
+  statusCode: number;
+  error: {
+    code: string;
+    message: string;
+    details: {
+      field: string;
+      message: string;
+    }[];
+  };
+};

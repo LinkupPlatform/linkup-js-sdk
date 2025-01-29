@@ -15,22 +15,25 @@ export default [
       sourceType: 'module',
       globals: {
         ...globals.node,
-        ...globals.jest
-      }
+        ...globals.jest,
+      },
     },
     plugins: {
       '@typescript-eslint': typescript,
-      'prettier': prettier
+      prettier: prettier,
     },
     rules: {
       ...typescript.configs.recommended.rules,
       ...eslintConfigPrettier.rules,
-      'prettier/prettier': ['error', {
-        'useTabs': false,
-        'tabWidth': 2
-      }],
+      'prettier/prettier': [
+        'error',
+        {
+          useTabs: false,
+          tabWidth: 2,
+        },
+      ],
       'no-tabs': 'error',
-      'indent': ['error', 2, { 'SwitchCase': 1 }]
-    }
-  }
+      indent: ['error', 2, { SwitchCase: 1 }],
+    },
+  },
 ];
