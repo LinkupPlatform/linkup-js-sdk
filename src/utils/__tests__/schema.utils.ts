@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { isZodObject } from '../../utils/schema.utils';
+import { isZodObject } from '../schema.utils';
 
 it('should check if is zod object', () => {
   expect(isZodObject(undefined)).toBeFalsy();
