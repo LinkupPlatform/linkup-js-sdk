@@ -20,10 +20,9 @@ import {
 import zodToJsonSchema from 'zod-to-json-schema';
 import { ZodObject, ZodRawShape } from 'zod';
 import { isZodObject, concatErrorAndDetails } from './utils';
-import { linkupUserAgent } from '.';
 
 export class LinkupClient {
-  private readonly USER_AGENT = linkupUserAgent;
+  private readonly USER_AGENT = 'Linkup-JS-SDK/1.0.4';
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
