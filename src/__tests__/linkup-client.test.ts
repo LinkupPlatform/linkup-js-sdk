@@ -48,7 +48,6 @@ describe('LinkupClient', () => {
       {
         q: 'foo',
         depth: 'deep',
-        includeImages: false,
         outputType: 'sourcedAnswer',
       },
       {

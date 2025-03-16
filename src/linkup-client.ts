@@ -22,7 +22,7 @@ import { ZodObject, ZodRawShape } from 'zod';
 import { isZodObject, concatErrorAndDetails } from './utils';
 
 export class LinkupClient {
-  private readonly USER_AGENT = 'Linkup-JS-SDK/1.0.4';
+  private readonly USER_AGENT = 'Linkup-JS-SDK/1.0.5';
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
@@ -67,25 +67,26 @@ export class LinkupClient {
     query,
     depth,
     outputType,
-    includeImages = false,
+    includeImages,
     structuredOutputSchema,
+    fromDate,
+    toDate,
   }: SearchParams<T>): Record<string, string | boolean> {
-    const searchParams: Record<string, string | boolean> = {
+    return {
       q: query,
       depth,
       outputType,
-      includeImages,
+      ...(includeImages && { includeImages }),
+      ...(fromDate && { fromDate: fromDate.toISOString() }),
+      ...(toDate && { toDate: toDate.toISOString() }),
+      ...(structuredOutputSchema && {
+        structuredOutputSchema: JSON.stringify(
+          isZodObject(structuredOutputSchema)
+            ? zodToJsonSchema(structuredOutputSchema as ZodObject<ZodRawShape>)
+            : structuredOutputSchema,
+        ),
+      }),
     };
-
-    if (structuredOutputSchema) {
-      searchParams.structuredOutputSchema = JSON.stringify(
-        isZodObject(structuredOutputSchema)
-          ? zodToJsonSchema(structuredOutputSchema as ZodObject<ZodRawShape>)
-          : structuredOutputSchema,
-      );
-    }
-
-    return searchParams;
   }
 
   private formatResponse<T>(
