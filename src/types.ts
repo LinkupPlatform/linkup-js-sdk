@@ -19,6 +19,8 @@ export interface SearchParams<T extends SearchOutputType> {
   outputType: T;
   includeImages?: boolean;
   structuredOutputSchema?: StructuredOutputSchema;
+  fromDate?: Date;
+  toDate?: Date;
 }
 
 export type LinkupSearchResponse<T> = T extends 'sourcedAnswer'
