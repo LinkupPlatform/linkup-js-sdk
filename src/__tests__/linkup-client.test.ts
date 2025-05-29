@@ -207,13 +207,14 @@ describe('LinkupClient', () => {
     };
     maxios.post.mockRejectedValueOnce(generateAxiosError(invalidError));
 
-    await expect(
-      underTest.search({} as SearchParams<'sourcedAnswer'>),
-    ).rejects.toThrow(
-      new LinkupInvalidRequestError(
+    try {
+      await underTest.search({} as SearchParams<'sourcedAnswer'>);
+    } catch (e) {
+      expect(e).toBeInstanceOf(LinkupInvalidRequestError);
+      expect((e as LinkupInvalidRequestError).message).toEqual(
         'Validation failed outputType must be one of the following values: sourcedAnswer, searchResults, structured',
-      ),
-    );
+      );
+    }
 
     // 400 empty result
     invalidError = {
@@ -227,9 +228,14 @@ describe('LinkupClient', () => {
     maxios.isAxiosError.mockReturnValueOnce(true);
     maxios.post.mockRejectedValueOnce(generateAxiosError(invalidError));
 
-    await expect(
-      underTest.search({} as SearchParams<'sourcedAnswer'>),
-    ).rejects.toThrow(new LinkupNoResultError(invalidError.error.message));
+    try {
+      await underTest.search({} as SearchParams<'sourcedAnswer'>);
+    } catch (e) {
+      expect(e).toBeInstanceOf(LinkupNoResultError);
+      expect((e as LinkupNoResultError).message).toEqual(
+        'The query did not yield any result',
+      );
+    }
 
     // 401
     invalidError = {
@@ -242,11 +248,14 @@ describe('LinkupClient', () => {
     };
     maxios.post.mockRejectedValueOnce(generateAxiosError(invalidError));
 
-    await expect(
-      underTest.search({} as SearchParams<'sourcedAnswer'>),
-    ).rejects.toThrow(
-      new LinkupAuthenticationError(invalidError.error.message),
-    );
+    try {
+      await underTest.search({} as SearchParams<'sourcedAnswer'>);
+    } catch (e) {
+      expect(e).toBeInstanceOf(LinkupAuthenticationError);
+      expect((e as LinkupAuthenticationError).message).toEqual(
+        'Unauthorized action',
+      );
+    }
 
     // 403
     invalidError = {
@@ -259,11 +268,14 @@ describe('LinkupClient', () => {
     };
     maxios.post.mockRejectedValueOnce(generateAxiosError(invalidError));
 
-    await expect(
-      underTest.search({} as SearchParams<'sourcedAnswer'>),
-    ).rejects.toThrow(
-      new LinkupAuthenticationError(invalidError.error.message),
-    );
+    try {
+      await underTest.search({} as SearchParams<'sourcedAnswer'>);
+    } catch (e) {
+      expect(e).toBeInstanceOf(LinkupAuthenticationError);
+      expect((e as LinkupAuthenticationError).message).toEqual(
+        'Forbidden action',
+      );
+    }
 
     // 429 - Insufficient credits
     invalidError = {
@@ -276,11 +288,14 @@ describe('LinkupClient', () => {
     };
     maxios.post.mockRejectedValueOnce(generateAxiosError(invalidError));
 
-    await expect(
-      underTest.search({} as SearchParams<'sourcedAnswer'>),
-    ).rejects.toThrow(
-      new LinkupInsufficientCreditError(invalidError.error.message),
-    );
+    try {
+      await underTest.search({} as SearchParams<'sourcedAnswer'>);
+    } catch (e) {
+      expect(e).toBeInstanceOf(LinkupInsufficientCreditError);
+      expect((e as LinkupInsufficientCreditError).message).toEqual(
+        'You do not have enough credits to perform this request.',
+      );
+    }
 
     // 429 - Too many requests
     invalidError = {
@@ -293,11 +308,14 @@ describe('LinkupClient', () => {
     };
     maxios.post.mockRejectedValueOnce(generateAxiosError(invalidError));
 
-    await expect(
-      underTest.search({} as SearchParams<'sourcedAnswer'>),
-    ).rejects.toThrow(
-      new LinkupTooManyRequestsError(invalidError.error.message),
-    );
+    try {
+      await underTest.search({} as SearchParams<'sourcedAnswer'>);
+    } catch (e) {
+      expect(e).toBeInstanceOf(LinkupTooManyRequestsError);
+      expect((e as LinkupTooManyRequestsError).message).toEqual(
+        'Too many requests',
+      );
+    }
 
     // 429 - Other
     invalidError = {
@@ -310,13 +328,14 @@ describe('LinkupClient', () => {
     };
     maxios.post.mockRejectedValueOnce(generateAxiosError(invalidError));
 
-    await expect(
-      underTest.search({} as SearchParams<'sourcedAnswer'>),
-    ).rejects.toThrow(
-      new LinkupUnknownError(
+    try {
+      await underTest.search({} as SearchParams<'sourcedAnswer'>);
+    } catch (e) {
+      expect(e).toBeInstanceOf(LinkupUnknownError);
+      expect((e as LinkupUnknownError).message).toEqual(
         `An unknown error occurred: ${invalidError.error.message}`,
-      ),
-    );
+      );
+    }
 
     // 500
     invalidError = {
@@ -329,13 +348,14 @@ describe('LinkupClient', () => {
     };
     maxios.post.mockRejectedValueOnce(generateAxiosError(invalidError));
 
-    await expect(
-      underTest.search({} as SearchParams<'sourcedAnswer'>),
-    ).rejects.toThrow(
-      new LinkupUnknownError(
+    try {
+      await underTest.search({} as SearchParams<'sourcedAnswer'>);
+    } catch (e) {
+      expect(e).toBeInstanceOf(LinkupUnknownError);
+      expect((e as LinkupUnknownError).message).toEqual(
         `An unknown error occurred: ${invalidError.error.message}`,
-      ),
-    );
+      );
+    }
   });
 });
 

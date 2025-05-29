@@ -5,6 +5,7 @@ import {
   LinkupInsufficientCreditError,
   LinkupInvalidRequestError,
   LinkupNoResultError,
+  LinkupTooManyRequestsError,
   LinkupUnknownError,
 } from './errors';
 import {
@@ -127,7 +128,7 @@ export class LinkupClient {
           case 'INSUFFICIENT_FUNDS_CREDITS':
             return new LinkupInsufficientCreditError(message);
           case 'TOO_MANY_REQUESTS':
-            return new LinkupInsufficientCreditError(message);
+            return new LinkupTooManyRequestsError(message);
           default:
             return new LinkupUnknownError(
               `An unknown error occurred: ${error.message}`,
