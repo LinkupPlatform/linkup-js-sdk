@@ -16,6 +16,7 @@ import {
   LinkupInsufficientCreditError,
   LinkupInvalidRequestError,
   LinkupNoResultError,
+  LinkupTooManyRequestsError,
   LinkupUnknownError,
 } from '../errors';
 import { z } from 'zod';
@@ -264,11 +265,11 @@ describe('LinkupClient', () => {
       new LinkupAuthenticationError(invalidError.error.message),
     );
 
-    // 429
+    // 429 - Insufficient credits
     invalidError = {
       statusCode: 429,
       error: {
-        code: 'INSUFFICIENT_CREDITS',
+        code: 'INSUFFICIENT_FUNDS_CREDITS',
         message: 'You do not have enough credits to perform this request.',
         details: [],
       },
@@ -279,6 +280,42 @@ describe('LinkupClient', () => {
       underTest.search({} as SearchParams<'sourcedAnswer'>),
     ).rejects.toThrow(
       new LinkupInsufficientCreditError(invalidError.error.message),
+    );
+
+    // 429 - Too many requests
+    invalidError = {
+      statusCode: 429,
+      error: {
+        code: 'TOO_MANY_REQUESTS',
+        message: 'Too many requests',
+        details: [],
+      },
+    };
+    maxios.post.mockRejectedValueOnce(generateAxiosError(invalidError));
+
+    await expect(
+      underTest.search({} as SearchParams<'sourcedAnswer'>),
+    ).rejects.toThrow(
+      new LinkupTooManyRequestsError(invalidError.error.message),
+    );
+
+    // 429 - Other
+    invalidError = {
+      statusCode: 429,
+      error: {
+        code: 'FOOBAR',
+        message: 'foobar',
+        details: [],
+      },
+    };
+    maxios.post.mockRejectedValueOnce(generateAxiosError(invalidError));
+
+    await expect(
+      underTest.search({} as SearchParams<'sourcedAnswer'>),
+    ).rejects.toThrow(
+      new LinkupUnknownError(
+        `An unknown error occurred: ${invalidError.error.message}`,
+      ),
     );
 
     // 500
