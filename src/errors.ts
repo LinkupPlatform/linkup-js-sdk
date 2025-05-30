@@ -59,6 +59,19 @@ export class LinkupInsufficientCreditError extends LinkupError {
   }
 }
 
+// Too many requests error, raised when the Linkup API returns a 429 status code.
+// It is returned when you are sending too many requests at a time.
+export class LinkupTooManyRequestsError extends LinkupError {
+  constructor(message?: string) {
+    super(message);
+    this.name = LinkupTooManyRequestsError.name;
+
+    if ('captureStackTrace' in Error) {
+      Error.captureStackTrace(this, LinkupTooManyRequestsError);
+    }
+  }
+}
+
 // Unknown error
 export class LinkupUnknownError extends LinkupError {
   constructor(message: string) {
