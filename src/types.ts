@@ -7,6 +7,7 @@ export type SearchOutputType = 'sourcedAnswer' | 'searchResults' | 'structured';
 export interface ApiConfig {
   apiKey: string;
   baseUrl?: string;
+  endpoint?: string;
 }
 
 export type StructuredOutputSchema =
