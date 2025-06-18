@@ -19,6 +19,8 @@ export interface SearchParams<T extends SearchOutputType> {
   outputType: T;
   includeImages?: boolean;
   structuredOutputSchema?: StructuredOutputSchema;
+  includeDomains?: string[];
+  excludeDomains?: string[];
   fromDate?: Date;
   toDate?: Date;
 }
