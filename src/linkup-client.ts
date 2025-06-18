@@ -23,7 +23,7 @@ import { ZodObject, ZodRawShape } from 'zod';
 import { isZodObject, concatErrorAndDetails } from './utils';
 
 export class LinkupClient {
-  private readonly USER_AGENT = 'Linkup-JS-SDK/1.0.7';
+  private readonly USER_AGENT = 'Linkup-JS-SDK/1.0.8';
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
