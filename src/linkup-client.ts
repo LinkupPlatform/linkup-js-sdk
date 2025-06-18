@@ -38,12 +38,12 @@ export class LinkupClient {
     params: SearchParams<T>,
   ): Promise<
     T extends 'sourcedAnswer'
-    ? SourcedAnswer
-    : T extends 'searchResults'
-    ? SearchResults
-    : T extends 'structured'
-    ? StructuredOutputSchema
-    : never
+      ? SourcedAnswer
+      : T extends 'searchResults'
+        ? SearchResults
+        : T extends 'structured'
+          ? StructuredOutputSchema
+          : never
   > {
     let headers: Record<string, string> = {
       Authorization: `Bearer ${this.apiKey}`,
