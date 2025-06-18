@@ -26,22 +26,24 @@ export class LinkupClient {
   private readonly USER_AGENT = 'Linkup-JS-SDK/1.0.7';
   private readonly apiKey: string;
   private readonly baseUrl: string;
+  private readonly endpoint: string;
 
   constructor(config: ApiConfig) {
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.linkup.so/v1';
+    this.endpoint = config.endpoint || '/search';
   }
 
   async search<T extends 'sourcedAnswer' | 'searchResults' | 'structured'>(
     params: SearchParams<T>,
   ): Promise<
     T extends 'sourcedAnswer'
-      ? SourcedAnswer
-      : T extends 'searchResults'
-        ? SearchResults
-        : T extends 'structured'
-          ? StructuredOutputSchema
-          : never
+    ? SourcedAnswer
+    : T extends 'searchResults'
+    ? SearchResults
+    : T extends 'structured'
+    ? StructuredOutputSchema
+    : never
   > {
     let headers: Record<string, string> = {
       Authorization: `Bearer ${this.apiKey}`,
@@ -52,7 +54,7 @@ export class LinkupClient {
     }
 
     return axios
-      .post('/search', this.sanitizeParams(params), {
+      .post(this.endpoint, this.sanitizeParams(params), {
         baseURL: this.baseUrl,
         headers,
       })
