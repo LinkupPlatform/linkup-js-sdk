@@ -72,14 +72,18 @@ export class LinkupClient {
     outputType,
     includeImages,
     structuredOutputSchema,
+    includeDomains,
+    excludeDomains,
     fromDate,
     toDate,
-  }: SearchParams<T>): Record<string, string | boolean> {
+  }: SearchParams<T>): Record<string, string | boolean | string[]> {
     return {
       q: query,
       depth,
       outputType,
       ...(includeImages && { includeImages }),
+      ...(includeDomains && { includeDomains }),
+      ...(excludeDomains && { excludeDomains }),
       ...(fromDate && { fromDate: fromDate.toISOString() }),
       ...(toDate && { toDate: toDate.toISOString() }),
       ...(structuredOutputSchema && {
