@@ -4,10 +4,8 @@ import { concatErrorAndDetails } from '../index';
 describe('concatErrorAndDetails', () => {
   it('should return the error message with the details', () => {
     const error: LinkupApiError = {
-      statusCode: 400,
       error: {
         code: 'ERROR',
-        message: 'Error description',
         details: [
           {
             field: 'field1',
@@ -18,7 +16,9 @@ describe('concatErrorAndDetails', () => {
             message: 'Detail 2',
           },
         ],
+        message: 'Error description',
       },
+      statusCode: 400,
     };
 
     const result = concatErrorAndDetails(error);
@@ -27,12 +27,12 @@ describe('concatErrorAndDetails', () => {
   });
   it('should return the error message when there is no details', () => {
     const error: LinkupApiError = {
-      statusCode: 400,
       error: {
         code: 'ERROR',
-        message: 'Error description',
         details: [],
+        message: 'Error description',
       },
+      statusCode: 400,
     };
 
     const result = concatErrorAndDetails(error);

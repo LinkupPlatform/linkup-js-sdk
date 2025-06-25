@@ -1,4 +1,6 @@
 import axios from 'axios';
+import { ZodObject, ZodRawShape } from 'zod';
+import zodToJsonSchema from 'zod-to-json-schema';
 import {
   LinkupAuthenticationError,
   LinkupError,
@@ -10,17 +12,15 @@ import {
 } from './errors';
 import {
   ApiConfig,
+  LinkupApiError,
+  LinkupSearchResponse,
   SearchOutputType,
   SearchParams,
   SearchResults,
   SourcedAnswer,
   StructuredOutputSchema,
-  LinkupSearchResponse,
-  LinkupApiError,
 } from './types';
-import zodToJsonSchema from 'zod-to-json-schema';
-import { ZodObject, ZodRawShape } from 'zod';
-import { isZodObject, concatErrorAndDetails } from './utils';
+import { concatErrorAndDetails, isZodObject } from './utils';
 
 export class LinkupClient {
   private readonly USER_AGENT = 'Linkup-JS-SDK/1.0.9';
@@ -45,7 +45,7 @@ export class LinkupClient {
           ? StructuredOutputSchema
           : never
   > {
-    let headers: Record<string, string> = {
+    const headers: Record<string, string> = {
       Authorization: `Bearer ${this.apiKey}`,
     };
 
@@ -58,10 +58,8 @@ export class LinkupClient {
         baseURL: this.baseUrl,
         headers,
       })
-      .then((response) =>
-        this.formatResponse<T>(response.data, params.outputType),
-      )
-      .catch((e) => {
+      .then(response => this.formatResponse<T>(response.data, params.outputType))
+      .catch(e => {
         throw this.refineError(e.response.data);
       });
   }
@@ -78,9 +76,9 @@ export class LinkupClient {
     toDate,
   }: SearchParams<T>): Record<string, string | boolean | string[]> {
     return {
-      q: query,
       depth,
       outputType,
+      q: query,
       ...(includeImages && { includeImages }),
       ...(includeDomains && { includeDomains }),
       ...(excludeDomains && { excludeDomains }),
@@ -110,6 +108,7 @@ export class LinkupClient {
         return {
           results: (searchResponse as SearchResults).results,
         } as LinkupSearchResponse<T>;
+      // biome-ignore lint/complexity/noUselessSwitchCase: left for exhaustiveness
       case 'structured':
       default:
         return searchResponse as LinkupSearchResponse<T>;
@@ -136,14 +135,10 @@ export class LinkupClient {
           case 'TOO_MANY_REQUESTS':
             return new LinkupTooManyRequestsError(message);
           default:
-            return new LinkupUnknownError(
-              `An unknown error occurred: ${error.message}`,
-            );
+            return new LinkupUnknownError(`An unknown error occurred: ${error.message}`);
         }
       default:
-        return new LinkupUnknownError(
-          `An unknown error occurred: ${error.message}`,
-        );
+        return new LinkupUnknownError(`An unknown error occurred: ${error.message}`);
     }
   }
 }

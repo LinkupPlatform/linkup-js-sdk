@@ -1,8 +1,12 @@
 name: Publish to npm
 
 on:
-  release:
-    types: [published]
+  push:
+    branches: main
+
+env:
+  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+  GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
 jobs:
   run-tests:
@@ -20,6 +24,4 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - run: npm ci
       - run: npm run build
-      - run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: npm run semantic-release
