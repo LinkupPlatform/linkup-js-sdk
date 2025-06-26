@@ -10,9 +10,7 @@ export interface ApiConfig {
   endpoint?: string;
 }
 
-export type StructuredOutputSchema =
-  | Record<string, unknown>
-  | ZodObject<ZodRawShape>;
+export type StructuredOutputSchema = Record<string, unknown> | ZodObject<ZodRawShape>;
 
 export interface SearchParams<T extends SearchOutputType> {
   query: string;

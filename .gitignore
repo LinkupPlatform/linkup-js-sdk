@@ -31,3 +31,5 @@ lerna-debug.log*
 # Dev
 playground.ts
 playground.js
+
+.vscode

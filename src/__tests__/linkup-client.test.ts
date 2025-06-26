@@ -1,16 +1,7 @@
-import { LinkupClient } from '../linkup-client';
-import axios, {
-  AxiosError,
-  AxiosResponse,
-  InternalAxiosRequestConfig,
-} from 'axios';
-import {
-  ImageSearchResult,
-  LinkupApiError,
-  SearchParams,
-  Source,
-  TextSearchResult,
-} from '../types';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import axios, { type AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
+import { z } from 'zod';
 import {
   LinkupAuthenticationError,
   LinkupInsufficientCreditError,
@@ -19,9 +10,14 @@ import {
   LinkupTooManyRequestsError,
   LinkupUnknownError,
 } from '../errors';
-import { z } from 'zod';
-import { join } from 'path';
-import { readFileSync } from 'fs';
+import { LinkupClient } from '../linkup-client';
+import type {
+  ImageSearchResult,
+  LinkupApiError,
+  SearchParams,
+  Source,
+  TextSearchResult,
+} from '../types';
 
 jest.mock('axios');
 const maxios = axios as jest.Mocked<typeof axios>;
@@ -39,17 +35,17 @@ describe('LinkupClient', () => {
     } as AxiosResponse);
 
     await underTest.search({
-      query: 'foo',
       depth: 'deep',
       outputType: 'sourcedAnswer',
+      query: 'foo',
     });
 
     expect(maxios.post).toHaveBeenCalledWith(
       '/search',
       {
-        q: 'foo',
         depth: 'deep',
         outputType: 'sourcedAnswer',
+        q: 'foo',
       },
       {
         baseURL: 'https://api.linkup.so/v1',
@@ -72,9 +68,9 @@ describe('LinkupClient', () => {
     } as AxiosResponse);
 
     await client.search({
-      query: 'foo',
       depth: 'deep',
       outputType: 'sourcedAnswer',
+      query: 'foo',
     });
 
     expect(maxios.post).toHaveBeenCalledWith(
@@ -93,18 +89,18 @@ describe('LinkupClient', () => {
         sources: [
           {
             name: 'foo',
-            url: 'http://foo.bar/baz',
             snippet: 'foo bar baz',
-          },
-          {
-            type: 'text',
-            name: 'bar',
             url: 'http://foo.bar/baz',
-            content: 'foo bar baz',
           },
           {
-            type: 'image',
+            content: 'foo bar baz',
+            name: 'bar',
+            type: 'text',
+            url: 'http://foo.bar/baz',
+          },
+          {
             name: 'baz',
+            type: 'image',
             url: 'http://foo.bar/baz',
           },
         ],
@@ -112,9 +108,9 @@ describe('LinkupClient', () => {
     } as AxiosResponse);
 
     const result = await underTest.search({
-      query: 'foo',
       depth: 'standard',
       outputType: 'sourcedAnswer',
+      query: 'foo',
     });
 
     expect(result.answer).toEqual('foo');
@@ -123,17 +119,11 @@ describe('LinkupClient', () => {
     expect((result.sources.at(0) as Source)?.snippet).toEqual('foo bar baz');
     expect((result.sources.at(1) as TextSearchResult)?.type).toEqual('text');
     expect((result.sources.at(1) as TextSearchResult)?.name).toEqual('bar');
-    expect((result.sources.at(1) as TextSearchResult)?.url).toEqual(
-      'http://foo.bar/baz',
-    );
-    expect((result.sources.at(1) as TextSearchResult)?.content).toEqual(
-      'foo bar baz',
-    );
+    expect((result.sources.at(1) as TextSearchResult)?.url).toEqual('http://foo.bar/baz');
+    expect((result.sources.at(1) as TextSearchResult)?.content).toEqual('foo bar baz');
     expect((result.sources.at(2) as ImageSearchResult)?.type).toEqual('image');
     expect((result.sources.at(2) as ImageSearchResult)?.name).toEqual('baz');
-    expect((result.sources.at(2) as ImageSearchResult)?.url).toEqual(
-      'http://foo.bar/baz',
-    );
+    expect((result.sources.at(2) as ImageSearchResult)?.url).toEqual('http://foo.bar/baz');
   });
 
   it('should handle searchResults output type', async () => {
@@ -142,9 +132,9 @@ describe('LinkupClient', () => {
     } as AxiosResponse);
 
     const result = await underTest.search({
-      query: 'foo',
       depth: 'standard',
       outputType: 'searchResults',
+      query: 'foo',
     });
 
     expect(result).toHaveProperty('results');
@@ -156,9 +146,9 @@ describe('LinkupClient', () => {
     } as AxiosResponse);
 
     const result = await underTest.search({
-      query: 'foo',
       depth: 'standard',
       outputType: 'structured',
+      query: 'foo',
       structuredOutputSchema: { type: 'string' },
     });
 
@@ -171,9 +161,9 @@ describe('LinkupClient', () => {
     } as AxiosResponse);
 
     await underTest.search({
-      query: 'foo',
       depth: 'standard',
       outputType: 'structured',
+      query: 'foo',
       structuredOutputSchema: z.object({ foo: z.string() }),
     });
 
@@ -181,9 +171,7 @@ describe('LinkupClient', () => {
       expect.anything(),
       expect.objectContaining({
         q: 'foo',
-        structuredOutputSchema: expect.stringContaining(
-          '"foo":{"type":"string"}',
-        ),
+        structuredOutputSchema: expect.stringContaining('"foo":{"type":"string"}'),
       }),
       expect.anything(),
     );
@@ -192,10 +180,8 @@ describe('LinkupClient', () => {
   it('should refine errors', async () => {
     // 400 invalid
     let invalidError: LinkupApiError = {
-      statusCode: 400,
       error: {
         code: 'VALIDATION_ERROR',
-        message: 'Validation failed',
         details: [
           {
             field: 'outputType',
@@ -203,7 +189,9 @@ describe('LinkupClient', () => {
               'outputType must be one of the following values: sourcedAnswer, searchResults, structured',
           },
         ],
+        message: 'Validation failed',
       },
+      statusCode: 400,
     };
     maxios.post.mockRejectedValueOnce(generateAxiosError(invalidError));
 
@@ -218,12 +206,12 @@ describe('LinkupClient', () => {
 
     // 400 empty result
     invalidError = {
-      statusCode: 400,
       error: {
         code: 'SEARCH_QUERY_NO_RESULT',
-        message: 'The query did not yield any result',
         details: [],
+        message: 'The query did not yield any result',
       },
+      statusCode: 400,
     };
     maxios.isAxiosError.mockReturnValueOnce(true);
     maxios.post.mockRejectedValueOnce(generateAxiosError(invalidError));
@@ -232,19 +220,17 @@ describe('LinkupClient', () => {
       await underTest.search({} as SearchParams<'sourcedAnswer'>);
     } catch (e) {
       expect(e).toBeInstanceOf(LinkupNoResultError);
-      expect((e as LinkupNoResultError).message).toEqual(
-        'The query did not yield any result',
-      );
+      expect((e as LinkupNoResultError).message).toEqual('The query did not yield any result');
     }
 
     // 401
     invalidError = {
-      statusCode: 401,
       error: {
         code: 'UNAUTHORIZED',
-        message: 'Unauthorized action',
         details: [],
+        message: 'Unauthorized action',
       },
+      statusCode: 401,
     };
     maxios.post.mockRejectedValueOnce(generateAxiosError(invalidError));
 
@@ -252,19 +238,17 @@ describe('LinkupClient', () => {
       await underTest.search({} as SearchParams<'sourcedAnswer'>);
     } catch (e) {
       expect(e).toBeInstanceOf(LinkupAuthenticationError);
-      expect((e as LinkupAuthenticationError).message).toEqual(
-        'Unauthorized action',
-      );
+      expect((e as LinkupAuthenticationError).message).toEqual('Unauthorized action');
     }
 
     // 403
     invalidError = {
-      statusCode: 403,
       error: {
         code: 'FORBIDDEN',
-        message: 'Forbidden action',
         details: [],
+        message: 'Forbidden action',
       },
+      statusCode: 403,
     };
     maxios.post.mockRejectedValueOnce(generateAxiosError(invalidError));
 
@@ -272,19 +256,17 @@ describe('LinkupClient', () => {
       await underTest.search({} as SearchParams<'sourcedAnswer'>);
     } catch (e) {
       expect(e).toBeInstanceOf(LinkupAuthenticationError);
-      expect((e as LinkupAuthenticationError).message).toEqual(
-        'Forbidden action',
-      );
+      expect((e as LinkupAuthenticationError).message).toEqual('Forbidden action');
     }
 
     // 429 - Insufficient credits
     invalidError = {
-      statusCode: 429,
       error: {
         code: 'INSUFFICIENT_FUNDS_CREDITS',
-        message: 'You do not have enough credits to perform this request.',
         details: [],
+        message: 'You do not have enough credits to perform this request.',
       },
+      statusCode: 429,
     };
     maxios.post.mockRejectedValueOnce(generateAxiosError(invalidError));
 
@@ -299,12 +281,12 @@ describe('LinkupClient', () => {
 
     // 429 - Too many requests
     invalidError = {
-      statusCode: 429,
       error: {
         code: 'TOO_MANY_REQUESTS',
-        message: 'Too many requests',
         details: [],
+        message: 'Too many requests',
       },
+      statusCode: 429,
     };
     maxios.post.mockRejectedValueOnce(generateAxiosError(invalidError));
 
@@ -312,19 +294,17 @@ describe('LinkupClient', () => {
       await underTest.search({} as SearchParams<'sourcedAnswer'>);
     } catch (e) {
       expect(e).toBeInstanceOf(LinkupTooManyRequestsError);
-      expect((e as LinkupTooManyRequestsError).message).toEqual(
-        'Too many requests',
-      );
+      expect((e as LinkupTooManyRequestsError).message).toEqual('Too many requests');
     }
 
     // 429 - Other
     invalidError = {
-      statusCode: 429,
       error: {
         code: 'FOOBAR',
-        message: 'foobar',
         details: [],
+        message: 'foobar',
       },
+      statusCode: 429,
     };
     maxios.post.mockRejectedValueOnce(generateAxiosError(invalidError));
 
@@ -339,12 +319,12 @@ describe('LinkupClient', () => {
 
     // 500
     invalidError = {
-      statusCode: 500,
       error: {
         code: 'INTERNAL_SERVER_ERROR',
-        message: 'Internal server error',
         details: [],
+        message: 'Internal server error',
       },
+      statusCode: 500,
     };
     maxios.post.mockRejectedValueOnce(generateAxiosError(invalidError));
 
@@ -361,17 +341,17 @@ describe('LinkupClient', () => {
 
 const generateAxiosError = (e: LinkupApiError): AxiosError => {
   return {
+    config: {} as InternalAxiosRequestConfig,
     isAxiosError: true,
-    name: e.error.code,
     message: e.error.message,
+    name: e.error.code,
     response: {
+      config: {} as InternalAxiosRequestConfig,
       data: e,
+      headers: {},
       status: e.statusCode,
       statusText: e.error.message,
-      headers: {},
-      config: {} as InternalAxiosRequestConfig,
     },
-    config: {} as InternalAxiosRequestConfig,
     toJSON: () => ({}),
   };
 };
