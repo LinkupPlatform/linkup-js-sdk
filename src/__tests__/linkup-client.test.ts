@@ -142,7 +142,16 @@ describe('LinkupClient', () => {
 
   it('should handle structured output type using JSON schema', async () => {
     maxios.post.mockResolvedValueOnce({
-      data: 'foo',
+      data: {
+        data: 'foo',
+        sources: [
+          {
+            name: 'foo',
+            snippet: 'foo bar baz',
+            url: 'http://foo.bar/baz',
+          },
+        ],
+      },
     } as AxiosResponse);
 
     const result = await underTest.search({
@@ -152,7 +161,10 @@ describe('LinkupClient', () => {
       structuredOutputSchema: { type: 'string' },
     });
 
-    expect(result).toEqual('foo');
+    expect(result).toEqual({
+      data: 'foo',
+      sources: [{ name: 'foo', snippet: 'foo bar baz', url: 'http://foo.bar/baz' }],
+    });
   });
 
   it('should handle structured output type using Zod schema', async () => {

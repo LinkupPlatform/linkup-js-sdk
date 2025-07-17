@@ -18,7 +18,7 @@ import {
   SearchParams,
   SearchResults,
   SourcedAnswer,
-  StructuredOutputSchema,
+  StructuredResult,
 } from './types';
 import { concatErrorAndDetails, isZodObject } from './utils';
 
@@ -42,7 +42,7 @@ export class LinkupClient {
       : T extends 'searchResults'
         ? SearchResults
         : T extends 'structured'
-          ? StructuredOutputSchema
+          ? StructuredResult
           : never
   > {
     const headers: Record<string, string> = {
@@ -108,8 +108,11 @@ export class LinkupClient {
         return {
           results: (searchResponse as SearchResults).results,
         } as LinkupSearchResponse<T>;
-      // biome-ignore lint/complexity/noUselessSwitchCase: left for exhaustiveness
       case 'structured':
+        return {
+          data: (searchResponse as StructuredResult).data,
+          sources: (searchResponse as StructuredResult).sources,
+        } as LinkupSearchResponse<T>;
       default:
         return searchResponse as LinkupSearchResponse<T>;
     }
