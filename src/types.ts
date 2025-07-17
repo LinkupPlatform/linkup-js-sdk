@@ -29,7 +29,7 @@ export type LinkupSearchResponse<T> = T extends 'sourcedAnswer'
   : T extends 'searchResults'
     ? SearchResults
     : T extends 'structured'
-      ? StructuredOutputSchema
+      ? StructuredResult
       : never;
 
 export interface SearchResults {
@@ -47,6 +47,11 @@ export interface ImageSearchResult {
   type: 'image';
   name: string;
   url: string;
+}
+
+export interface StructuredResult {
+  data: string;
+  sources: (Source | TextSearchResult | ImageSearchResult)[];
 }
 
 export interface SourcedAnswer {
