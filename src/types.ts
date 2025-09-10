@@ -7,7 +7,6 @@ export type SearchOutputType = 'sourcedAnswer' | 'searchResults' | 'structured';
 export interface ApiConfig {
   apiKey: string;
   baseUrl?: string;
-  endpoint?: string;
 }
 
 export type StructuredOutputSchema = Record<string, unknown> | ZodObject<ZodRawShape>;
@@ -71,3 +70,9 @@ export type LinkupApiError = {
     }[];
   };
 };
+
+export interface FetchParams {
+  url: string;
+  outputFormat: 'html' | 'markdown';
+  renderJS?: boolean;
+}

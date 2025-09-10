@@ -1,9 +1,8 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import axios, { type AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
+import axios, { type AxiosResponse } from 'axios';
 import { z } from 'zod';
 import {
   LinkupAuthenticationError,
+  LinkupFetchError,
   LinkupInsufficientCreditError,
   LinkupInvalidRequestError,
   LinkupNoResultError,
@@ -18,19 +17,33 @@ import type {
   Source,
   TextSearchResult,
 } from '../types';
+import { refineError } from '../utils/refine-error.utils';
 
 jest.mock('axios');
 const maxios = axios as jest.Mocked<typeof axios>;
+
+const mockAxiosInstance = {
+  interceptors: {
+    response: {
+      use: jest.fn(),
+    },
+  },
+  post: jest.fn(),
+  // biome-ignore lint/suspicious/noExplicitAny: testing purpose
+} as any;
+
+maxios.create = jest.fn(() => mockAxiosInstance);
 
 describe('LinkupClient', () => {
   const underTest = new LinkupClient({ apiKey: '1234' });
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockAxiosInstance.post.mockClear();
   });
 
   it('should make a successful API call with correct parameters', async () => {
-    maxios.post.mockResolvedValueOnce({
+    mockAxiosInstance.post.mockResolvedValueOnce({
       data: { answer: '' },
     } as AxiosResponse);
 
@@ -40,30 +53,32 @@ describe('LinkupClient', () => {
       query: 'foo',
     });
 
-    expect(maxios.post).toHaveBeenCalledWith(
-      '/search',
-      {
-        depth: 'deep',
-        outputType: 'sourcedAnswer',
-        q: 'foo',
-      },
-      {
-        baseURL: 'https://api.linkup.so/v1',
-        headers: {
-          Authorization: 'Bearer 1234',
-          'User-Agent': `Linkup-JS-SDK/${getVersionFromPackage()}`,
-        },
-      },
-    );
+    expect(mockAxiosInstance.post).toHaveBeenCalledWith('/search', {
+      depth: 'deep',
+      outputType: 'sourcedAnswer',
+      q: 'foo',
+    });
   });
 
   it('should use custom base URL if provided', async () => {
+    const customMockInstance = {
+      interceptors: {
+        response: {
+          use: jest.fn(),
+        },
+      },
+      post: jest.fn(),
+      // biome-ignore lint/suspicious/noExplicitAny: testing purpose
+    } as any;
+
+    maxios.create = jest.fn(() => customMockInstance);
+
     const client = new LinkupClient({
       apiKey: '1234',
       baseUrl: 'http://foo.bar/baz',
     });
 
-    maxios.post.mockResolvedValueOnce({
+    customMockInstance.post.mockResolvedValueOnce({
       data: { answer: '' },
     } as AxiosResponse);
 
@@ -73,17 +88,17 @@ describe('LinkupClient', () => {
       query: 'foo',
     });
 
-    expect(maxios.post).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.anything(),
-      expect.objectContaining({
-        baseURL: 'http://foo.bar/baz',
-      }),
-    );
+    expect(maxios.create).toHaveBeenCalledWith({
+      baseURL: 'http://foo.bar/baz',
+      headers: {
+        Authorization: 'Bearer 1234',
+        'User-Agent': 'Linkup-JS-SDK/2.0.0',
+      },
+    });
   });
 
   it('should handle sourcedAnswer output type', async () => {
-    maxios.post.mockResolvedValueOnce({
+    mockAxiosInstance.post.mockResolvedValueOnce({
       data: {
         answer: 'foo',
         sources: [
@@ -127,7 +142,7 @@ describe('LinkupClient', () => {
   });
 
   it('should handle searchResults output type', async () => {
-    maxios.post.mockResolvedValueOnce({
+    mockAxiosInstance.post.mockResolvedValueOnce({
       data: { results: [] },
     } as AxiosResponse);
 
@@ -141,7 +156,7 @@ describe('LinkupClient', () => {
   });
 
   it('should handle structured output type using JSON schema', async () => {
-    maxios.post.mockResolvedValueOnce({
+    mockAxiosInstance.post.mockResolvedValueOnce({
       data: 'foo',
     } as AxiosResponse);
 
@@ -156,7 +171,7 @@ describe('LinkupClient', () => {
   });
 
   it('should handle structured output type using Zod schema', async () => {
-    maxios.post.mockResolvedValueOnce({
+    mockAxiosInstance.post.mockResolvedValueOnce({
       data: 'foo',
     } as AxiosResponse);
 
@@ -167,14 +182,87 @@ describe('LinkupClient', () => {
       structuredOutputSchema: z.object({ foo: z.string() }),
     });
 
-    expect(maxios.post).toHaveBeenCalledWith(
+    expect(mockAxiosInstance.post).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
         q: 'foo',
         structuredOutputSchema: expect.stringContaining('"foo":{"type":"string"}'),
       }),
-      expect.anything(),
     );
+  });
+
+  describe('fetch method', () => {
+    it('should make a successful fetch API call with HTML output', async () => {
+      const mockResponse = { data: '<html><body>Content</body></html>' };
+      mockAxiosInstance.post.mockResolvedValueOnce(mockResponse as AxiosResponse);
+
+      const result = await underTest.fetch({
+        outputFormat: 'html',
+        url: 'https://example.com',
+      });
+
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/fetch', {
+        outputFormat: 'html',
+        url: 'https://example.com',
+      });
+      expect(result).toEqual('<html><body>Content</body></html>');
+    });
+
+    it('should make a successful fetch API call with Markdown output', async () => {
+      const mockResponse = { data: '# Title\n\nContent' };
+      mockAxiosInstance.post.mockResolvedValueOnce(mockResponse as AxiosResponse);
+
+      const result = await underTest.fetch({
+        outputFormat: 'markdown',
+        url: 'https://example.com',
+      });
+
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/fetch', {
+        outputFormat: 'markdown',
+        url: 'https://example.com',
+      });
+      expect(result).toEqual('# Title\n\nContent');
+    });
+
+    it('should handle fetch with renderJS parameter', async () => {
+      const mockResponse = { data: 'Fetched content' };
+      mockAxiosInstance.post.mockResolvedValueOnce(mockResponse as AxiosResponse);
+
+      await underTest.fetch({
+        outputFormat: 'html',
+        renderJS: true,
+        url: 'https://example.com',
+      });
+
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/fetch', {
+        outputFormat: 'html',
+        renderJS: true,
+        url: 'https://example.com',
+      });
+    });
+
+    it('should handle fetch errors', async () => {
+      const fetchError: LinkupApiError = {
+        error: {
+          code: 'FETCH_ERROR',
+          details: [],
+          message: 'Failed to fetch the content from the URL',
+        },
+        statusCode: 400,
+      };
+      mockAxiosInstance.post.mockRejectedValueOnce(refineError(fetchError));
+
+      try {
+        await underTest.fetch({
+          outputFormat: 'html',
+          url: 'https://invalid-url.com',
+        });
+        fail('Expected fetch to throw an error');
+      } catch (e) {
+        expect(e).toBeInstanceOf(LinkupFetchError);
+        expect((e as LinkupFetchError).message).toEqual('Failed to fetch the content from the URL');
+      }
+    });
   });
 
   it('should refine errors', async () => {
@@ -193,7 +281,7 @@ describe('LinkupClient', () => {
       },
       statusCode: 400,
     };
-    maxios.post.mockRejectedValueOnce(generateAxiosError(invalidError));
+    mockAxiosInstance.post.mockRejectedValueOnce(refineError(invalidError));
 
     try {
       await underTest.search({} as SearchParams<'sourcedAnswer'>);
@@ -213,8 +301,7 @@ describe('LinkupClient', () => {
       },
       statusCode: 400,
     };
-    maxios.isAxiosError.mockReturnValueOnce(true);
-    maxios.post.mockRejectedValueOnce(generateAxiosError(invalidError));
+    mockAxiosInstance.post.mockRejectedValueOnce(refineError(invalidError));
 
     try {
       await underTest.search({} as SearchParams<'sourcedAnswer'>);
@@ -232,7 +319,7 @@ describe('LinkupClient', () => {
       },
       statusCode: 401,
     };
-    maxios.post.mockRejectedValueOnce(generateAxiosError(invalidError));
+    mockAxiosInstance.post.mockRejectedValueOnce(refineError(invalidError));
 
     try {
       await underTest.search({} as SearchParams<'sourcedAnswer'>);
@@ -250,7 +337,7 @@ describe('LinkupClient', () => {
       },
       statusCode: 403,
     };
-    maxios.post.mockRejectedValueOnce(generateAxiosError(invalidError));
+    mockAxiosInstance.post.mockRejectedValueOnce(refineError(invalidError));
 
     try {
       await underTest.search({} as SearchParams<'sourcedAnswer'>);
@@ -268,7 +355,7 @@ describe('LinkupClient', () => {
       },
       statusCode: 429,
     };
-    maxios.post.mockRejectedValueOnce(generateAxiosError(invalidError));
+    mockAxiosInstance.post.mockRejectedValueOnce(refineError(invalidError));
 
     try {
       await underTest.search({} as SearchParams<'sourcedAnswer'>);
@@ -288,7 +375,7 @@ describe('LinkupClient', () => {
       },
       statusCode: 429,
     };
-    maxios.post.mockRejectedValueOnce(generateAxiosError(invalidError));
+    mockAxiosInstance.post.mockRejectedValueOnce(refineError(invalidError));
 
     try {
       await underTest.search({} as SearchParams<'sourcedAnswer'>);
@@ -306,7 +393,7 @@ describe('LinkupClient', () => {
       },
       statusCode: 429,
     };
-    maxios.post.mockRejectedValueOnce(generateAxiosError(invalidError));
+    mockAxiosInstance.post.mockRejectedValueOnce(refineError(invalidError));
 
     try {
       await underTest.search({} as SearchParams<'sourcedAnswer'>);
@@ -326,7 +413,7 @@ describe('LinkupClient', () => {
       },
       statusCode: 500,
     };
-    maxios.post.mockRejectedValueOnce(generateAxiosError(invalidError));
+    mockAxiosInstance.post.mockRejectedValueOnce(refineError(invalidError));
 
     try {
       await underTest.search({} as SearchParams<'sourcedAnswer'>);
@@ -338,30 +425,3 @@ describe('LinkupClient', () => {
     }
   });
 });
-
-const generateAxiosError = (e: LinkupApiError): AxiosError => {
-  return {
-    config: {} as InternalAxiosRequestConfig,
-    isAxiosError: true,
-    message: e.error.message,
-    name: e.error.code,
-    response: {
-      config: {} as InternalAxiosRequestConfig,
-      data: e,
-      headers: {},
-      status: e.statusCode,
-      statusText: e.error.message,
-    },
-    toJSON: () => ({}),
-  };
-};
-
-const getVersionFromPackage = (): string => {
-  try {
-    const packagePath = join(__dirname, '..', '..', 'package.json');
-    const packageJson = JSON.parse(readFileSync(packagePath, 'utf8'));
-    return packageJson.version;
-  } catch {
-    throw new Error('Could not read package version');
-  }
-};

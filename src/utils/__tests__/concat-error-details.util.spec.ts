@@ -1,5 +1,5 @@
 import { LinkupApiError } from '../../types';
-import { concatErrorAndDetails } from '../index';
+import { concatErrorAndDetails } from '../refine-error.utils';
 
 describe('concatErrorAndDetails', () => {
   it('should return the error message with the details', () => {

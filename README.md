@@ -41,7 +41,7 @@ const client = new LinkupClient({
 });
 ```
 
-### 📋 Examples
+### 📋 Search Endpoint
 
 All search queries can be used with two very different modes:
 
@@ -51,7 +51,7 @@ All search queries can be used with two very different modes:
   but it will be able to solve more complex queries (e.g. "What is the company profile of LangChain
   accross the last few years, and how does it compare to its concurrents?")
 
-#### 📝 Standard Search Query
+#### 📝 Example standard search query
 
 ```typescript
 import { LinkupClient } from 'linkup-js-sdk';
@@ -60,13 +60,39 @@ const client = new LinkupClient({
   apiKey: '<YOUR API KEY>',
 });
 
-const askLinkup = async () => {
-  return await client.search({
-    query: 'Can you tell me which women were awared the Physics Nobel Prize',
-    depth: 'standard',
-    outputType: 'sourcedAnswer',
-  });
-};
+const askLinkup = () => client.search({
+  query: 'Can you tell me which women were awared the Physics Nobel Prize',
+  depth: 'standard',
+  outputType: 'sourcedAnswer',
+});
 
-askLinkup().then(console.log);
+askLinkup()
+  .then(console.log);
+  .catch(console.error);
+```
+
+### ⬇️ Fetch Endpoint
+
+You can use the fetch endpoint to retrieve the content of a given URL either in `html` or `markdown` format.
+
+You can also use the `renderJS` flag to execute the JavaScript code of the page before returning the content.
+
+#### 📝 Example
+
+```typescript
+import { LinkupClient } from 'linkup-js-sdk';
+
+const client = new LinkupClient({
+  apiKey: '<YOUR API KEY>',
+});
+
+const fetchLinkup = async () => client.fetch({
+  url: 'https://www.linkup.so',
+  outputFormat: 'html',
+  renderJS: true,
+});
+
+fetchLinkup()
+  .then(console.log)
+  .catch(console.error);
 ```
