@@ -1,18 +1,9 @@
-import axios from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import { ZodObject, ZodRawShape } from 'zod';
 import zodToJsonSchema from 'zod-to-json-schema';
 import {
-  LinkupAuthenticationError,
-  LinkupError,
-  LinkupInsufficientCreditError,
-  LinkupInvalidRequestError,
-  LinkupNoResultError,
-  LinkupTooManyRequestsError,
-  LinkupUnknownError,
-} from './errors';
-import {
   ApiConfig,
-  LinkupApiError,
+  FetchParams,
   LinkupSearchResponse,
   SearchOutputType,
   SearchParams,
@@ -20,18 +11,33 @@ import {
   SourcedAnswer,
   StructuredOutputSchema,
 } from './types';
-import { concatErrorAndDetails, isZodObject } from './utils';
+import { refineError } from './utils/refine-error.utils';
+import { isZodObject } from './utils/schema.utils';
 
 export class LinkupClient {
-  private readonly USER_AGENT = 'Linkup-JS-SDK/1.0.9';
-  private readonly apiKey: string;
-  private readonly baseUrl: string;
-  private readonly endpoint: string;
+  private readonly USER_AGENT = 'Linkup-JS-SDK/2.0.0';
+  private readonly client: AxiosInstance;
 
   constructor(config: ApiConfig) {
-    this.apiKey = config.apiKey;
-    this.baseUrl = config.baseUrl || 'https://api.linkup.so/v1';
-    this.endpoint = config.endpoint || '/search';
+    const baseURL = config.baseUrl || 'https://api.linkup.so/v1';
+
+    this.client = axios.create({
+      baseURL,
+      headers: {
+        Authorization: `Bearer ${config.apiKey}`,
+        'User-Agent': this.USER_AGENT,
+      },
+    });
+
+    this.client.interceptors.response.use(
+      response => response,
+      error => {
+        if (!error.response || !error.response.data) {
+          throw error;
+        }
+        throw refineError(error.response.data);
+      },
+    );
   }
 
   async search<T extends 'sourcedAnswer' | 'searchResults' | 'structured'>(
@@ -45,23 +51,13 @@ export class LinkupClient {
           ? StructuredOutputSchema
           : never
   > {
-    const headers: Record<string, string> = {
-      Authorization: `Bearer ${this.apiKey}`,
-    };
+    return this.client
+      .post('/search', this.sanitizeParams(params))
+      .then(response => this.formatResponse<T>(response.data, params.outputType));
+  }
 
-    if (typeof window === 'undefined') {
-      headers['User-Agent'] = this.USER_AGENT;
-    }
-
-    return axios
-      .post(this.endpoint, this.sanitizeParams(params), {
-        baseURL: this.baseUrl,
-        headers,
-      })
-      .then(response => this.formatResponse<T>(response.data, params.outputType))
-      .catch(e => {
-        throw this.refineError(e.response.data);
-      });
+  async fetch(params: FetchParams): Promise<unknown> {
+    return this.client.post('/fetch', params).then(response => response.data);
   }
 
   private sanitizeParams<T extends SearchOutputType>({
@@ -112,33 +108,6 @@ export class LinkupClient {
       case 'structured':
       default:
         return searchResponse as LinkupSearchResponse<T>;
-    }
-  }
-
-  private refineError(e: LinkupApiError): LinkupError {
-    const { statusCode, error } = e;
-    const { code, message } = error;
-
-    switch (statusCode) {
-      case 400:
-        if (code === 'SEARCH_QUERY_NO_RESULT') {
-          return new LinkupNoResultError(message);
-        }
-        return new LinkupInvalidRequestError(concatErrorAndDetails(e));
-      case 401:
-      case 403:
-        return new LinkupAuthenticationError(message);
-      case 429:
-        switch (code) {
-          case 'INSUFFICIENT_FUNDS_CREDITS':
-            return new LinkupInsufficientCreditError(message);
-          case 'TOO_MANY_REQUESTS':
-            return new LinkupTooManyRequestsError(message);
-          default:
-            return new LinkupUnknownError(`An unknown error occurred: ${error.message}`);
-        }
-      default:
-        return new LinkupUnknownError(`An unknown error occurred: ${error.message}`);
     }
   }
 }

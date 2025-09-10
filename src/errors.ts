@@ -83,3 +83,16 @@ export class LinkupUnknownError extends LinkupError {
     }
   }
 }
+
+// Fetch error, raised when the Linkup API returns a 400 status code.
+// It is returned by the Linkup API when the fetch failed.
+export class LinkupFetchError extends LinkupError {
+  constructor(message?: string) {
+    super(message);
+    this.name = LinkupFetchError.name;
+
+    if ('captureStackTrace' in Error) {
+      Error.captureStackTrace(this, LinkupFetchError);
+    }
+  }
+}
