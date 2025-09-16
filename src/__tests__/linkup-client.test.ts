@@ -192,51 +192,49 @@ describe('LinkupClient', () => {
   });
 
   describe('fetch method', () => {
-    it('should make a successful fetch API call with HTML output', async () => {
-      const mockResponse = { data: '<html><body>Content</body></html>' };
+    it('should make a successful fetch API call', async () => {
+      const mockResponse = { data: { markdown: 'Content' } };
       mockAxiosInstance.post.mockResolvedValueOnce(mockResponse as AxiosResponse);
 
       const result = await underTest.fetch({
-        outputFormat: 'html',
         url: 'https://example.com',
       });
 
       expect(mockAxiosInstance.post).toHaveBeenCalledWith('/fetch', {
-        outputFormat: 'html',
         url: 'https://example.com',
       });
-      expect(result).toEqual('<html><body>Content</body></html>');
+      expect(result).toEqual({ markdown: 'Content' });
     });
 
-    it('should make a successful fetch API call with Markdown output', async () => {
-      const mockResponse = { data: '# Title\n\nContent' };
+    it('should make a successful fetch API call including raw HTML', async () => {
+      const mockResponse = {
+        data: { markdown: 'Content', rawHtml: '<h1>Title</h1><p>Content</p>' },
+      };
       mockAxiosInstance.post.mockResolvedValueOnce(mockResponse as AxiosResponse);
 
       const result = await underTest.fetch({
-        outputFormat: 'markdown',
+        includeRawHtml: true,
         url: 'https://example.com',
       });
 
       expect(mockAxiosInstance.post).toHaveBeenCalledWith('/fetch', {
-        outputFormat: 'markdown',
+        includeRawHtml: true,
         url: 'https://example.com',
       });
-      expect(result).toEqual('# Title\n\nContent');
+      expect(result).toEqual({ markdown: 'Content', rawHtml: '<h1>Title</h1><p>Content</p>' });
     });
 
     it('should handle fetch with renderJS parameter', async () => {
-      const mockResponse = { data: 'Fetched content' };
+      const mockResponse = { data: { markdown: 'Fetched content' } };
       mockAxiosInstance.post.mockResolvedValueOnce(mockResponse as AxiosResponse);
 
       await underTest.fetch({
-        outputFormat: 'html',
-        renderJS: true,
+        renderJs: true,
         url: 'https://example.com',
       });
 
       expect(mockAxiosInstance.post).toHaveBeenCalledWith('/fetch', {
-        outputFormat: 'html',
-        renderJS: true,
+        renderJs: true,
         url: 'https://example.com',
       });
     });
@@ -254,7 +252,6 @@ describe('LinkupClient', () => {
 
       try {
         await underTest.fetch({
-          outputFormat: 'html',
           url: 'https://invalid-url.com',
         });
         fail('Expected fetch to throw an error');

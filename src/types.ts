@@ -73,6 +73,11 @@ export type LinkupApiError = {
 
 export interface FetchParams {
   url: string;
-  outputFormat: 'html' | 'markdown';
-  renderJS?: boolean;
+  renderJs?: boolean;
+  includeRawHtml?: boolean;
+}
+
+export interface LinkupFetchResponse {
+  markdown: string;
+  rawHtml?: string;
 }
