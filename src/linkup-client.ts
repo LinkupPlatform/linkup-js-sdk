@@ -62,6 +62,7 @@ export class LinkupClient {
     excludeDomains,
     fromDate,
     toDate,
+    includeInlineCitations,
   }: SearchParams<T>): Record<string, string | boolean | string[]> {
     return {
       depth,
@@ -72,6 +73,7 @@ export class LinkupClient {
       ...(excludeDomains && { excludeDomains }),
       ...(fromDate && { fromDate: fromDate.toISOString() }),
       ...(toDate && { toDate: toDate.toISOString() }),
+      ...(includeInlineCitations && { includeInlineCitations }),
       ...(structuredOutputSchema && {
         structuredOutputSchema: JSON.stringify(
           isZodObject(structuredOutputSchema)
