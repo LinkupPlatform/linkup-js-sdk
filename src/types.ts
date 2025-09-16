@@ -23,6 +23,7 @@ export interface SearchParams<T extends SearchOutputType> {
   excludeDomains?: string[];
   fromDate?: Date;
   toDate?: Date;
+  includeInlineCitations?: boolean;
 }
 
 export type LinkupSearchResponse<T> = T extends 'sourcedAnswer'

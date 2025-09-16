@@ -60,6 +60,26 @@ describe('LinkupClient', () => {
     });
   });
 
+  it('should include includeInlineCitations parameter when provided', async () => {
+    mockAxiosInstance.post.mockResolvedValueOnce({
+      data: { answer: '' },
+    } as AxiosResponse);
+
+    await underTest.search({
+      depth: 'deep',
+      includeInlineCitations: true,
+      outputType: 'sourcedAnswer',
+      query: 'foo',
+    });
+
+    expect(mockAxiosInstance.post).toHaveBeenCalledWith('/search', {
+      depth: 'deep',
+      includeInlineCitations: true,
+      outputType: 'sourcedAnswer',
+      q: 'foo',
+    });
+  });
+
   it('should use custom base URL if provided', async () => {
     const customMockInstance = {
       interceptors: {
