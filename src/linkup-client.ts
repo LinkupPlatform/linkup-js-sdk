@@ -4,6 +4,7 @@ import zodToJsonSchema from 'zod-to-json-schema';
 import {
   ApiConfig,
   FetchParams,
+  LinkupFetchResponse,
   LinkupSearchResponse,
   SearchOutputType,
   SearchParams,
@@ -56,8 +57,8 @@ export class LinkupClient {
       .then(response => this.formatResponse<T>(response.data, params.outputType));
   }
 
-  async fetch(params: FetchParams): Promise<unknown> {
-    return this.client.post('/fetch', params).then(response => response.data);
+  async fetch(params: FetchParams): Promise<LinkupFetchResponse> {
+    return this.client.post<LinkupFetchResponse>('/fetch', params).then(response => response.data);
   }
 
   private sanitizeParams<T extends SearchOutputType>({
