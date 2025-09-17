@@ -10,13 +10,12 @@ import {
   SearchParams,
   SearchResults,
   SourcedAnswer,
-  StructuredOutputSchema,
 } from './types';
 import { refineError } from './utils/refine-error.utils';
 import { isZodObject } from './utils/schema.utils';
 
 export class LinkupClient {
-  private readonly USER_AGENT = 'Linkup-JS-SDK/2.0.0';
+  private readonly USER_AGENT = 'Linkup-JS-SDK/2.1.1';
   private readonly client: AxiosInstance;
 
   constructor(config: ApiConfig) {
@@ -41,24 +40,16 @@ export class LinkupClient {
     );
   }
 
-  async search<T extends 'sourcedAnswer' | 'searchResults' | 'structured'>(
+  async search<T extends SearchOutputType>(
     params: SearchParams<T>,
-  ): Promise<
-    T extends 'sourcedAnswer'
-      ? SourcedAnswer
-      : T extends 'searchResults'
-        ? SearchResults
-        : T extends 'structured'
-          ? StructuredOutputSchema
-          : never
-  > {
+  ): Promise<LinkupSearchResponse<T>> {
     return this.client
       .post('/search', this.sanitizeParams(params))
-      .then(response => this.formatResponse<T>(response.data, params.outputType));
+      .then(response => this.formatResponse(response.data, params.outputType));
   }
 
-  async fetch(params: FetchParams): Promise<LinkupFetchResponse> {
-    return this.client.post<LinkupFetchResponse>('/fetch', params).then(response => response.data);
+  async fetch<T extends FetchParams>(params: T): Promise<LinkupFetchResponse<T>> {
+    return this.client.post('/fetch', params).then(response => response.data);
   }
 
   private sanitizeParams<T extends SearchOutputType>({
@@ -91,9 +82,9 @@ export class LinkupClient {
     };
   }
 
-  private formatResponse<T>(
+  private formatResponse<T extends SearchOutputType>(
     searchResponse: unknown,
-    outputType: SearchOutputType,
+    outputType: T,
   ): LinkupSearchResponse<T> {
     switch (outputType) {
       case 'sourcedAnswer':
