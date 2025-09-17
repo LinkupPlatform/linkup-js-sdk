@@ -92,7 +92,7 @@ describe('LinkupClient', () => {
       baseURL: 'http://foo.bar/baz',
       headers: {
         Authorization: 'Bearer 1234',
-        'User-Agent': 'Linkup-JS-SDK/2.0.0',
+        'User-Agent': 'Linkup-JS-SDK/2.1.1',
       },
     });
   });

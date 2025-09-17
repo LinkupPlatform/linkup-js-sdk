@@ -9,14 +9,16 @@ export interface ApiConfig {
   baseUrl?: string;
 }
 
-export type StructuredOutputSchema = Record<string, unknown> | ZodObject<ZodRawShape>;
+export type StructuredOutputSchema = Record<string, unknown>;
+
+export type StructuredOutputInputSchema = StructuredOutputSchema | ZodObject<ZodRawShape>;
 
 export interface SearchParams<T extends SearchOutputType> {
   query: string;
   depth: SearchDepth;
   outputType: T;
   includeImages?: boolean;
-  structuredOutputSchema?: StructuredOutputSchema;
+  structuredOutputSchema?: StructuredOutputInputSchema;
   includeDomains?: string[];
   excludeDomains?: string[];
   fromDate?: Date;
@@ -77,7 +79,6 @@ export interface FetchParams {
   includeRawHtml?: boolean;
 }
 
-export interface LinkupFetchResponse {
+export type LinkupFetchResponse<T extends FetchParams = FetchParams> = {
   markdown: string;
-  rawHtml?: string;
-}
+} & (T['includeRawHtml'] extends true ? { rawHtml: string } : Record<string, never>);
