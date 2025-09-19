@@ -259,6 +259,40 @@ describe('LinkupClient', () => {
       });
     });
 
+    it('should handle fetch with extractImages parameter', async () => {
+      const mockResponse = {
+        data: {
+          images: [
+            {
+              alt: 'Image 1',
+              url: 'https://example.com/image.jpg',
+            },
+          ],
+          markdown: 'Fetched content',
+        },
+      };
+      mockAxiosInstance.post.mockResolvedValueOnce(mockResponse as AxiosResponse);
+
+      const result = await underTest.fetch({
+        extractImages: true,
+        url: 'https://example.com',
+      });
+
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/fetch', {
+        extractImages: true,
+        url: 'https://example.com',
+      });
+      expect(result).toEqual({
+        images: [
+          {
+            alt: 'Image 1',
+            url: 'https://example.com/image.jpg',
+          },
+        ],
+        markdown: 'Fetched content',
+      });
+    });
+
     it('should handle fetch errors', async () => {
       const fetchError: LinkupApiError = {
         error: {
