@@ -75,9 +75,11 @@ askLinkup()
 
 You can use the fetch endpoint to retrieve the content of a given URL in clean `markdown` format.
 
-You can also use the `renderJs` flag to execute the JavaScript code of the page before returning the content.
+Use `renderJs` to execute the JavaScript code of the page before returning the content.
 
-You can also ask to `includeRawHtml` if you feel like it.
+Use `includeRawHtml` to get the raw HTML of the page.
+
+Use `extractImages` to get an extracted list of images from the page.
 
 #### 📝 Example
 

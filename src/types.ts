@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/complexity/noBannedTypes: needed for conditional props */
 import { ZodObject, ZodRawShape } from 'zod';
 
 export type SearchDepth = 'standard' | 'deep';
@@ -78,8 +79,12 @@ export interface FetchParams {
   url: string;
   renderJs?: boolean;
   includeRawHtml?: boolean;
+  extractImages?: boolean;
 }
+
+type ConditionalProp<Condition, PropType> = Condition extends true ? PropType : {};
 
 export type LinkupFetchResponse<T extends FetchParams = FetchParams> = {
   markdown: string;
-} & (T['includeRawHtml'] extends true ? { rawHtml: string } : Record<string, never>);
+} & ConditionalProp<T['includeRawHtml'], { rawHtml: string }> &
+  ConditionalProp<T['extractImages'], { images: string[] }>;
