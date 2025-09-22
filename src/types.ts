@@ -3,65 +3,87 @@ import { ZodObject, ZodRawShape } from 'zod';
 
 export type SearchDepth = 'standard' | 'deep';
 
-export type SearchOutputType = 'sourcedAnswer' | 'searchResults' | 'structured';
-
-export interface ApiConfig {
+export type ApiConfig = {
   apiKey: string;
   baseUrl?: string;
-}
+};
 
-export type StructuredOutputSchema = Record<string, unknown>;
+export type Structured = Record<string, unknown>;
 
-export type StructuredOutputInputSchema = StructuredOutputSchema | ZodObject<ZodRawShape>;
+export type StructuredInputSchema = Structured | ZodObject<ZodRawShape>;
 
-export interface SearchParams<T extends SearchOutputType> {
+export type StructuredWithSources = {
+  data: Structured;
+  sources: StructuredSource[];
+};
+
+export type StructuredSource = {
+  url: string;
+  content: string;
+  name: string;
+  type: string;
+};
+
+export type SearchParams = {
   query: string;
   depth: SearchDepth;
-  outputType: T;
   includeImages?: boolean;
-  structuredOutputSchema?: StructuredOutputInputSchema;
   includeDomains?: string[];
   excludeDomains?: string[];
   fromDate?: Date;
   toDate?: Date;
-  includeInlineCitations?: boolean;
-}
+} & (
+  | {
+      outputType: 'searchResults';
+    }
+  | {
+      outputType: 'sourcedAnswer';
+      includeInlineCitations?: boolean;
+    }
+  | {
+      outputType: 'structured';
+      includeSources?: boolean;
+      structuredOutputSchema: StructuredInputSchema;
+    }
+);
 
-export type LinkupSearchResponse<T> = T extends 'sourcedAnswer'
-  ? SourcedAnswer
-  : T extends 'searchResults'
-    ? SearchResults
-    : T extends 'structured'
-      ? StructuredOutputSchema
-      : never;
+export type SourcedAnswerParams = Extract<SearchParams, { outputType: 'sourcedAnswer' }>;
+export type SearchResultsParams = Extract<SearchParams, { outputType: 'searchResults' }>;
+export type StructuredParams = Extract<SearchParams, { outputType: 'structured' }>;
 
-export interface SearchResults {
+export type LinkupSearchResponse =
+  | SourcedAnswer
+  | SearchResults
+  | Structured
+  | StructuredWithSources;
+
+export type SearchResults = {
   results: (TextSearchResult | ImageSearchResult)[];
-}
+};
 
-export interface TextSearchResult {
+export type TextSearchResult = {
   type: 'text';
   name: string;
   url: string;
   content: string;
-}
+};
 
-export interface ImageSearchResult {
+export type ImageSearchResult = {
   type: 'image';
   name: string;
   url: string;
-}
+};
 
-export interface SourcedAnswer {
+export type SourcedAnswer = {
   answer: string;
   sources: (Source | TextSearchResult | ImageSearchResult)[];
-}
+};
 
-export interface Source {
+export type Source = {
   name: string;
   url: string;
   snippet: string;
-}
+};
 
 export type LinkupApiError = {
   statusCode: number;
@@ -75,16 +97,16 @@ export type LinkupApiError = {
   };
 };
 
-export interface FetchParams {
+export type FetchParams = {
   url: string;
   renderJs?: boolean;
   includeRawHtml?: boolean;
   extractImages?: boolean;
-}
-
-type ConditionalProp<Condition, PropType> = Condition extends true ? PropType : {};
+};
 
 export type LinkupFetchResponse<T extends FetchParams = FetchParams> = {
   markdown: string;
 } & ConditionalProp<T['includeRawHtml'], { rawHtml: string }> &
   ConditionalProp<T['extractImages'], { images: string[] }>;
+
+type ConditionalProp<Condition, PropType> = Condition extends true ? PropType : {};

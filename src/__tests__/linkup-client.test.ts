@@ -13,8 +13,8 @@ import { LinkupClient } from '../linkup-client';
 import type {
   ImageSearchResult,
   LinkupApiError,
-  SearchParams,
   Source,
+  SourcedAnswerParams,
   TextSearchResult,
 } from '../types';
 import { refineError } from '../utils/refine-error.utils';
@@ -177,7 +177,9 @@ describe('LinkupClient', () => {
 
   it('should handle structured output type using JSON schema', async () => {
     mockAxiosInstance.post.mockResolvedValueOnce({
-      data: 'foo',
+      data: {
+        type: 'foo',
+      },
     } as AxiosResponse);
 
     const result = await underTest.search({
@@ -187,7 +189,45 @@ describe('LinkupClient', () => {
       structuredOutputSchema: { type: 'string' },
     });
 
-    expect(result).toEqual('foo');
+    expect(result).toEqual({ type: 'foo' });
+  });
+
+  it('should handle structured output type using JSON schema with includeSources', async () => {
+    mockAxiosInstance.post.mockResolvedValueOnce({
+      data: {
+        data: {
+          type: 'foo',
+        },
+        sources: [
+          {
+            content: 'Lorem ipsum dolor sit amet',
+            name: 'foo',
+            type: 'text',
+            url: 'http://foo.bar/baz',
+          },
+        ],
+      },
+    } as AxiosResponse);
+
+    const result = await underTest.search({
+      depth: 'standard',
+      includeSources: true,
+      outputType: 'structured',
+      query: 'foo',
+      structuredOutputSchema: { type: 'string' },
+    });
+
+    expect(result).toEqual({
+      data: { type: 'foo' },
+      sources: [
+        {
+          content: 'Lorem ipsum dolor sit amet',
+          name: 'foo',
+          type: 'text',
+          url: 'http://foo.bar/baz',
+        },
+      ],
+    });
   });
 
   it('should handle structured output type using Zod schema', async () => {
@@ -335,7 +375,7 @@ describe('LinkupClient', () => {
     mockAxiosInstance.post.mockRejectedValueOnce(refineError(invalidError));
 
     try {
-      await underTest.search({} as SearchParams<'sourcedAnswer'>);
+      await underTest.search({} as SourcedAnswerParams);
     } catch (e) {
       expect(e).toBeInstanceOf(LinkupInvalidRequestError);
       expect((e as LinkupInvalidRequestError).message).toEqual(
@@ -355,7 +395,7 @@ describe('LinkupClient', () => {
     mockAxiosInstance.post.mockRejectedValueOnce(refineError(invalidError));
 
     try {
-      await underTest.search({} as SearchParams<'sourcedAnswer'>);
+      await underTest.search({} as SourcedAnswerParams);
     } catch (e) {
       expect(e).toBeInstanceOf(LinkupNoResultError);
       expect((e as LinkupNoResultError).message).toEqual('The query did not yield any result');
@@ -373,7 +413,7 @@ describe('LinkupClient', () => {
     mockAxiosInstance.post.mockRejectedValueOnce(refineError(invalidError));
 
     try {
-      await underTest.search({} as SearchParams<'sourcedAnswer'>);
+      await underTest.search({} as SourcedAnswerParams);
     } catch (e) {
       expect(e).toBeInstanceOf(LinkupAuthenticationError);
       expect((e as LinkupAuthenticationError).message).toEqual('Unauthorized action');
@@ -391,7 +431,7 @@ describe('LinkupClient', () => {
     mockAxiosInstance.post.mockRejectedValueOnce(refineError(invalidError));
 
     try {
-      await underTest.search({} as SearchParams<'sourcedAnswer'>);
+      await underTest.search({} as SourcedAnswerParams);
     } catch (e) {
       expect(e).toBeInstanceOf(LinkupAuthenticationError);
       expect((e as LinkupAuthenticationError).message).toEqual('Forbidden action');
@@ -409,7 +449,7 @@ describe('LinkupClient', () => {
     mockAxiosInstance.post.mockRejectedValueOnce(refineError(invalidError));
 
     try {
-      await underTest.search({} as SearchParams<'sourcedAnswer'>);
+      await underTest.search({} as SourcedAnswerParams);
     } catch (e) {
       expect(e).toBeInstanceOf(LinkupInsufficientCreditError);
       expect((e as LinkupInsufficientCreditError).message).toEqual(
@@ -429,7 +469,7 @@ describe('LinkupClient', () => {
     mockAxiosInstance.post.mockRejectedValueOnce(refineError(invalidError));
 
     try {
-      await underTest.search({} as SearchParams<'sourcedAnswer'>);
+      await underTest.search({} as SourcedAnswerParams);
     } catch (e) {
       expect(e).toBeInstanceOf(LinkupTooManyRequestsError);
       expect((e as LinkupTooManyRequestsError).message).toEqual('Too many requests');
@@ -447,7 +487,7 @@ describe('LinkupClient', () => {
     mockAxiosInstance.post.mockRejectedValueOnce(refineError(invalidError));
 
     try {
-      await underTest.search({} as SearchParams<'sourcedAnswer'>);
+      await underTest.search({} as SourcedAnswerParams);
     } catch (e) {
       expect(e).toBeInstanceOf(LinkupUnknownError);
       expect((e as LinkupUnknownError).message).toEqual(
@@ -467,7 +507,7 @@ describe('LinkupClient', () => {
     mockAxiosInstance.post.mockRejectedValueOnce(refineError(invalidError));
 
     try {
-      await underTest.search({} as SearchParams<'sourcedAnswer'>);
+      await underTest.search({} as SourcedAnswerParams);
     } catch (e) {
       expect(e).toBeInstanceOf(LinkupUnknownError);
       expect((e as LinkupUnknownError).message).toEqual(
