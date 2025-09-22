@@ -5,11 +5,14 @@ import {
   ApiConfig,
   FetchParams,
   LinkupFetchResponse,
-  LinkupSearchResponse,
-  SearchOutputType,
   SearchParams,
   SearchResults,
+  SearchResultsParams,
   SourcedAnswer,
+  SourcedAnswerParams,
+  Structured,
+  StructuredParams,
+  StructuredWithSources,
 } from './types';
 import { refineError } from './utils/refine-error.utils';
 import { isZodObject } from './utils/schema.utils';
@@ -40,31 +43,36 @@ export class LinkupClient {
     );
   }
 
-  async search<T extends SearchOutputType>(
-    params: SearchParams<T>,
-  ): Promise<LinkupSearchResponse<T>> {
-    return this.client
-      .post('/search', this.sanitizeParams(params))
-      .then(response => this.formatResponse(response.data, params.outputType));
+  async search(params: SourcedAnswerParams): Promise<SourcedAnswer>;
+  async search(params: SearchResultsParams): Promise<SearchResults>;
+  async search(params: StructuredParams & { includeSources: true }): Promise<StructuredWithSources>;
+  async search(
+    params: StructuredParams & { includeSources?: false | undefined },
+  ): Promise<Structured>;
+
+  async search(
+    params: SearchParams,
+  ): Promise<SourcedAnswer | SearchResults | Structured | StructuredWithSources> {
+    return this.client.post('/search', this.sanitizeParams(params)).then(response => response.data);
   }
 
   async fetch<T extends FetchParams>(params: T): Promise<LinkupFetchResponse<T>> {
     return this.client.post('/fetch', params).then(response => response.data);
   }
 
-  private sanitizeParams<T extends SearchOutputType>({
-    query,
-    depth,
-    outputType,
-    includeImages,
-    structuredOutputSchema,
-    includeDomains,
-    excludeDomains,
-    fromDate,
-    toDate,
-    includeInlineCitations,
-  }: SearchParams<T>): Record<string, string | boolean | string[]> {
-    return {
+  private sanitizeParams(params: SearchParams): Record<string, string | boolean | string[]> {
+    const {
+      query,
+      depth,
+      outputType,
+      includeImages,
+      includeDomains,
+      excludeDomains,
+      fromDate,
+      toDate,
+    } = params;
+
+    const result: Record<string, string | boolean | string[]> = {
       depth,
       outputType,
       q: query,
@@ -73,35 +81,24 @@ export class LinkupClient {
       ...(excludeDomains && { excludeDomains }),
       ...(fromDate && { fromDate: fromDate.toISOString() }),
       ...(toDate && { toDate: toDate.toISOString() }),
-      ...(includeInlineCitations && { includeInlineCitations }),
-      ...(structuredOutputSchema && {
-        structuredOutputSchema: JSON.stringify(
-          isZodObject(structuredOutputSchema)
-            ? zodToJsonSchema(structuredOutputSchema as ZodObject<ZodRawShape>)
-            : structuredOutputSchema,
-        ),
-      }),
     };
-  }
 
-  private formatResponse<T extends SearchOutputType>(
-    searchResponse: unknown,
-    outputType: T,
-  ): LinkupSearchResponse<T> {
-    switch (outputType) {
-      case 'sourcedAnswer':
-        return {
-          answer: (searchResponse as SourcedAnswer).answer,
-          sources: (searchResponse as SourcedAnswer).sources,
-        } as LinkupSearchResponse<T>;
-      case 'searchResults':
-        return {
-          results: (searchResponse as SearchResults).results,
-        } as LinkupSearchResponse<T>;
-      // biome-ignore lint/complexity/noUselessSwitchCase: left for exhaustiveness
-      case 'structured':
-      default:
-        return searchResponse as LinkupSearchResponse<T>;
+    if ('includeInlineCitations' in params && params.includeInlineCitations) {
+      result.includeInlineCitations = params.includeInlineCitations;
     }
+
+    if ('includeSources' in params && params.includeSources) {
+      result.includeSources = params.includeSources;
+    }
+
+    if ('structuredOutputSchema' in params) {
+      result.structuredOutputSchema = JSON.stringify(
+        isZodObject(params.structuredOutputSchema)
+          ? zodToJsonSchema(params.structuredOutputSchema as ZodObject<ZodRawShape>)
+          : params.structuredOutputSchema,
+      );
+    }
+
+    return result;
   }
 }
