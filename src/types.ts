@@ -47,15 +47,13 @@ export type SearchParams = {
     }
 );
 
-export type SourcedAnswerParams = Extract<SearchParams, { outputType: 'sourcedAnswer' }>;
-export type SearchResultsParams = Extract<SearchParams, { outputType: 'searchResults' }>;
-export type StructuredParams = Extract<SearchParams, { outputType: 'structured' }>;
-
-export type LinkupSearchResponse =
-  | SourcedAnswer
-  | SearchResults
-  | Structured
-  | StructuredWithSources;
+export type LinkupSearchResponse<T> = T extends { outputType: 'structured'; includeSources: true }
+  ? StructuredWithSources
+  : T extends { outputType: 'structured' }
+    ? Structured
+    : T extends { outputType: 'sourcedAnswer' }
+      ? SourcedAnswer
+      : SearchResults;
 
 export type SearchResults = {
   results: (TextSearchResult | ImageSearchResult)[];

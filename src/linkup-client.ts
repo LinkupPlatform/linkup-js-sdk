@@ -5,14 +5,8 @@ import {
   ApiConfig,
   FetchParams,
   LinkupFetchResponse,
+  LinkupSearchResponse,
   SearchParams,
-  SearchResults,
-  SearchResultsParams,
-  SourcedAnswer,
-  SourcedAnswerParams,
-  Structured,
-  StructuredParams,
-  StructuredWithSources,
 } from './types';
 import { refineError } from './utils/refine-error.utils';
 import { isZodObject } from './utils/schema.utils';
@@ -43,16 +37,7 @@ export class LinkupClient {
     );
   }
 
-  async search(params: SourcedAnswerParams): Promise<SourcedAnswer>;
-  async search(params: SearchResultsParams): Promise<SearchResults>;
-  async search(params: StructuredParams & { includeSources: true }): Promise<StructuredWithSources>;
-  async search(
-    params: StructuredParams & { includeSources?: false | undefined },
-  ): Promise<Structured>;
-
-  async search(
-    params: SearchParams,
-  ): Promise<SourcedAnswer | SearchResults | Structured | StructuredWithSources> {
+  async search<T extends SearchParams>(params: T): Promise<LinkupSearchResponse<T>> {
     return this.client.post('/search', this.sanitizeParams(params)).then(response => response.data);
   }
 
@@ -60,7 +45,9 @@ export class LinkupClient {
     return this.client.post('/fetch', params).then(response => response.data);
   }
 
-  private sanitizeParams(params: SearchParams): Record<string, string | boolean | string[]> {
+  private sanitizeParams<T extends SearchParams>(
+    params: T,
+  ): Record<string, string | boolean | string[]> {
     const {
       query,
       depth,
