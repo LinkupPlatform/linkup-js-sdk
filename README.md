@@ -34,7 +34,7 @@ Sign up on [Linkup](https://app.linkup.so) to get your API key.
 Pass the Linkup API key to the Linkup Client when creating it.
 
 ```typescript
-import { LinkupClient } from 'linkup-sdk';
+import { LinkupClient } from 'linkup-js-sdk';
 
 const client = new LinkupClient({
   apiKey: '<YOUR API KEY>',
