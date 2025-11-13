@@ -32,6 +32,7 @@ export type SearchParams = {
   excludeDomains?: string[];
   fromDate?: Date;
   toDate?: Date;
+  maxResults?: number;
 } & (
   | {
       outputType: 'searchResults';

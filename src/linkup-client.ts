@@ -12,7 +12,7 @@ import { refineError } from './utils/refine-error.utils';
 import { isZodObject } from './utils/schema.utils';
 
 export class LinkupClient {
-  private readonly USER_AGENT = 'Linkup-JS-SDK/2.1.1';
+  private readonly USER_AGENT = 'Linkup-JS-SDK/2.5.0';
   private readonly client: AxiosInstance;
 
   constructor(config: ApiConfig) {
@@ -47,7 +47,7 @@ export class LinkupClient {
 
   private sanitizeParams<T extends SearchParams>(
     params: T,
-  ): Record<string, string | boolean | string[]> {
+  ): Record<string, string | boolean | string[] | number> {
     const {
       query,
       depth,
@@ -57,9 +57,10 @@ export class LinkupClient {
       excludeDomains,
       fromDate,
       toDate,
+      maxResults,
     } = params;
 
-    const result: Record<string, string | boolean | string[]> = {
+    const result: Record<string, string | boolean | string[] | number> = {
       depth,
       outputType,
       q: query,
@@ -68,6 +69,7 @@ export class LinkupClient {
       ...(excludeDomains && { excludeDomains }),
       ...(fromDate && { fromDate: fromDate.toISOString() }),
       ...(toDate && { toDate: toDate.toISOString() }),
+      ...(maxResults && { maxResults }),
     };
 
     if ('includeInlineCitations' in params && params.includeInlineCitations) {

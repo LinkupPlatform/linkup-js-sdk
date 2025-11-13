@@ -21,6 +21,10 @@ Simply install the Linkup JS SDK using `npm` or any other package manager:
 npm i linkup-sdk
 ```
 
+## 📚 Documentation
+
+Find the complete documentation [here](https://docs.linkup.so/pages/sdk/js/js).
+
 ## 🛠️ Usage
 
 ### Setting Up Your Environment

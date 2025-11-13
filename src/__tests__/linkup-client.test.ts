@@ -60,23 +60,38 @@ describe('LinkupClient', () => {
     });
   });
 
-  it('should include includeInlineCitations parameter when provided', async () => {
+  it('should include all valid parameters when provided', async () => {
     mockAxiosInstance.post.mockResolvedValueOnce({
       data: { answer: '' },
     } as AxiosResponse);
+    const fromDate = new Date('2025-01-01');
+    const toDate = new Date('2025-01-02');
 
     await underTest.search({
       depth: 'deep',
+      excludeDomains: ['baz.com', 'qux.com'],
+      fromDate,
+      includeDomains: ['foo.com', 'bar.com'],
+      includeImages: true,
       includeInlineCitations: true,
+      maxResults: 10,
       outputType: 'sourcedAnswer',
       query: 'foo',
+      toDate,
+      wrongParameter: 'wrong',
     });
 
     expect(mockAxiosInstance.post).toHaveBeenCalledWith('/search', {
       depth: 'deep',
+      excludeDomains: ['baz.com', 'qux.com'],
+      fromDate: fromDate.toISOString(),
+      includeDomains: ['foo.com', 'bar.com'],
+      includeImages: true,
       includeInlineCitations: true,
+      maxResults: 10,
       outputType: 'sourcedAnswer',
       q: 'foo',
+      toDate: toDate.toISOString(),
     });
   });
 
@@ -112,7 +127,7 @@ describe('LinkupClient', () => {
       baseURL: 'http://foo.bar/baz',
       headers: {
         Authorization: 'Bearer 1234',
-        'User-Agent': 'Linkup-JS-SDK/2.1.1',
+        'User-Agent': 'Linkup-JS-SDK/2.5.0',
       },
     });
   });
