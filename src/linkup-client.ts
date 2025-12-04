@@ -12,7 +12,7 @@ import { refineError } from './utils/refine-error.utils';
 import { isZodObject } from './utils/schema.utils';
 
 export class LinkupClient {
-  private readonly USER_AGENT = 'Linkup-JS-SDK/2.5.0';
+  private readonly USER_AGENT = 'Linkup-JS-SDK/2.5.1';
   private readonly client: AxiosInstance;
 
   constructor(config: ApiConfig) {
