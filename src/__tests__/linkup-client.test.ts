@@ -127,7 +127,7 @@ describe('LinkupClient', () => {
       baseURL: 'http://foo.bar/baz',
       headers: {
         Authorization: 'Bearer 1234',
-        'User-Agent': 'Linkup-JS-SDK/2.5.0',
+        'User-Agent': 'Linkup-JS-SDK/2.5.1',
       },
     });
   });
@@ -528,6 +528,20 @@ describe('LinkupClient', () => {
       expect((e as LinkupUnknownError).message).toEqual(
         `An unknown error occurred: ${invalidError.error.message}`,
       );
+    }
+  });
+
+  it('should handle malformed error responses without error property', async () => {
+    // biome-ignore lint/suspicious/noExplicitAny: testing malformed response
+    const malformedError = { statusCode: 500 } as any;
+    mockAxiosInstance.post.mockRejectedValueOnce(refineError(malformedError));
+
+    try {
+      await underTest.search({} as SearchParams);
+      fail('Expected search to throw an error');
+    } catch (e) {
+      expect(e).toBeInstanceOf(LinkupUnknownError);
+      expect((e as LinkupUnknownError).message).toContain('An unknown error occurred');
     }
   });
 });

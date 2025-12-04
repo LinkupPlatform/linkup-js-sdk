@@ -11,15 +11,22 @@ import {
 import type { LinkupApiError } from '../types';
 
 export const concatErrorAndDetails = (e: LinkupApiError): string => {
-  const errorMessage = [e.error.message, ...e.error.details.map(detail => detail.message)].join(
-    ' ',
-  );
+  const details = e.error?.details ?? [];
+  const errorMessage = [
+    e.error?.message ?? 'Unknown error',
+    ...details.map(detail => detail.message),
+  ].join(' ');
 
   return errorMessage;
 };
 
 export const refineError = (e: LinkupApiError): LinkupError => {
   const { statusCode, error } = e;
+
+  if (!error || typeof error !== 'object') {
+    return new LinkupUnknownError(`An unknown error occurred: ${JSON.stringify(e)}`);
+  }
+
   const { code, message } = error;
 
   switch (statusCode) {
