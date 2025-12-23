@@ -1,7 +1,9 @@
 import axios, { AxiosInstance } from 'axios';
+import OpenAI from 'openai';
 import { ZodObject, ZodRawShape } from 'zod';
 import zodToJsonSchema from 'zod-to-json-schema';
 import { version } from '../package.json';
+import { OpenAILinkupWrapper } from './openai-wrapper';
 import {
   ApiConfig,
   FetchParams,
@@ -90,5 +92,9 @@ export class LinkupClient {
     }
 
     return result;
+  }
+
+  wrap(openAIClient: OpenAI): OpenAILinkupWrapper {
+    return new OpenAILinkupWrapper(openAIClient, this.search);
   }
 }
