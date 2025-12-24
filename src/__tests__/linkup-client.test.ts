@@ -1,4 +1,5 @@
 import axios, { type AxiosResponse } from 'axios';
+import OpenAI from 'openai';
 import { z } from 'zod';
 import {
   LinkupAuthenticationError,
@@ -10,6 +11,7 @@ import {
   LinkupUnknownError,
 } from '../errors';
 import { LinkupClient } from '../linkup-client';
+import { OpenAILinkupWrapper } from '../openai-wrapper';
 import type {
   ImageSearchResult,
   LinkupApiError,
@@ -377,6 +379,59 @@ describe('LinkupClient', () => {
         expect((e as LinkupFetchError).message).toEqual('Failed to fetch the content from the URL');
       }
     });
+  });
+
+  it('wrap returns a openAI wrapper instance', () => {
+    const responsesCreate = jest.fn();
+    const openAIClient = {
+      chat: { completions: { create: jest.fn() } },
+      responses: { create: responsesCreate },
+    } as unknown as OpenAI;
+
+    const wrapper = underTest.wrap(openAIClient);
+
+    expect(wrapper).toBeInstanceOf(OpenAILinkupWrapper);
+    expect(wrapper.responses).toBeDefined();
+    expect(wrapper.chat).toBeDefined();
+    expect(responsesCreate).not.toHaveBeenCalled();
+  });
+
+  it('wrap should return a openAI wrapper bound to the client search method', async () => {
+    const responsesCreate = jest.fn();
+    const openAIClient = {
+      chat: { completions: { create: jest.fn() } },
+      responses: { create: responsesCreate },
+    } as unknown as OpenAI;
+    const searchSpy = jest.spyOn(underTest, 'search');
+    const wrapper = underTest.wrap(openAIClient);
+
+    mockAxiosInstance.post.mockResolvedValueOnce({
+      data: { results: [{ id: '1' }] },
+    } as AxiosResponse);
+
+    const firstResponse = {
+      output: [
+        {
+          arguments: JSON.stringify({ query: 'foo-bar' }),
+          name: 'search_web',
+          type: 'function_call',
+        },
+      ],
+    };
+    const finalResponse = { final: true };
+    responsesCreate.mockResolvedValueOnce(firstResponse).mockResolvedValueOnce(finalResponse);
+
+    const response = await wrapper.responses.create({ input: 'foo', model: 'model' });
+
+    expect(response).toBe(finalResponse);
+    expect(searchSpy).toHaveBeenCalledWith({
+      depth: 'standard',
+      outputType: 'searchResults',
+      query: 'foo-bar',
+    });
+    expect(responsesCreate).toHaveBeenCalledTimes(2);
+
+    searchSpy.mockRestore();
   });
 
   it('should refine errors', async () => {

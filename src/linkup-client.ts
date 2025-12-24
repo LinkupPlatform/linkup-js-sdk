@@ -95,6 +95,6 @@ export class LinkupClient {
   }
 
   wrap(openAIClient: OpenAI): OpenAILinkupWrapper {
-    return new OpenAILinkupWrapper(openAIClient, this.search);
+    return new OpenAILinkupWrapper(openAIClient, this.search.bind(this));
   }
 }
