@@ -1,11 +1,16 @@
 import OpenAI from 'openai';
-import { ChatCompletionTool } from 'openai/resources';
+import { ChatCompletionMessageFunctionToolCall, ChatCompletionTool } from 'openai/resources';
 import { Tool } from 'openai/resources/responses/responses.js';
 import { ResponseFunctionToolCall } from 'openai/resources/responses/responses.mjs';
+import { SearchParams, SearchResults } from './types';
+
+type LinkupSearchFunction = (
+  params: SearchParams & { outputType: 'searchResults' },
+) => Promise<SearchResults>;
 
 export class OpenAILinkupWrapper {
   private clientOpenAI: OpenAI;
-  private linkupSearch: any;
+  private linkupSearch: LinkupSearchFunction;
 
   private readonly searchWebDefinition = {
     description:
@@ -44,7 +49,7 @@ export class OpenAILinkupWrapper {
     },
   ];
 
-  constructor(openAIClient: OpenAI, linkupSearch: any) {
+  constructor(openAIClient: OpenAI, linkupSearch: LinkupSearchFunction) {
     this.clientOpenAI = openAIClient;
     this.linkupSearch = linkupSearch;
   }
@@ -66,7 +71,7 @@ export class OpenAILinkupWrapper {
 
         const mergeTools: Tool[] = [...this.tools, ...(tools || [])];
 
-        const response = await this.clientOpenAI.responses.create({
+        const first = await this.clientOpenAI.responses.create({
           input,
           model,
           tools: mergeTools,
@@ -79,15 +84,15 @@ export class OpenAILinkupWrapper {
           typeof item === 'string' ? item : JSON.stringify(item),
         );
 
-        const toolCalls = response.output.filter(
+        const searchWebToolCalls = first.output.filter(
           items => items.type === 'function_call' && items.name === this.searchWebDefinition.name,
         ) as ResponseFunctionToolCall[];
 
-        if (toolCalls.length === 0) {
-          return response;
+        if (searchWebToolCalls.length === 0) {
+          return first;
         }
 
-        for (const toolCall of toolCalls) {
+        for (const toolCall of searchWebToolCalls) {
           const args = JSON.parse(toolCall.arguments);
 
           const linkupResponse = await this.searchLinkup(args.query);
@@ -96,14 +101,14 @@ export class OpenAILinkupWrapper {
         }
 
         // Get final response with linkup results
-        const finalResponse = await this.clientOpenAI.responses.create({
+        const final = await this.clientOpenAI.responses.create({
           input: inputList.join('\n\n'),
           model,
-          tools: mergeTools as any,
+          tools: mergeTools,
           ...otherParams,
         });
 
-        return finalResponse;
+        return final;
       },
     };
   }
@@ -112,7 +117,7 @@ export class OpenAILinkupWrapper {
     return {
       completions: {
         create: async (params: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming) => {
-          const { model, messages, tools, stream, ...otherParams } = params;
+          const { model, messages, tools, ...otherParams } = params;
 
           const mergedTools = [...this.chatTools, ...(tools || [])];
 
@@ -124,19 +129,22 @@ export class OpenAILinkupWrapper {
           });
 
           const assistantMessage = first?.choices?.[0]?.message;
-          const toolCalls = assistantMessage?.tool_calls;
 
-          if (!toolCalls || toolCalls.length === 0) {
+          const searchWebToolCalls =
+            assistantMessage?.tool_calls?.filter(
+              (toolCall): toolCall is ChatCompletionMessageFunctionToolCall =>
+                toolCall.type === 'function' &&
+                toolCall.function?.name === this.searchWebDefinition.name,
+            ) ?? [];
+
+          if (searchWebToolCalls.length === 0) {
             return first;
           }
 
           const nextMessages = [...messages, assistantMessage];
 
-          for (const toolCall of toolCalls) {
-            if (toolCall.type !== 'function') continue;
-            if (toolCall.function?.name !== this.searchWebDefinition.name) continue;
-
-            const args = JSON.parse(toolCall.function.arguments || '{}');
+          for (const toolCall of searchWebToolCalls) {
+            const args = JSON.parse(toolCall.function?.arguments || '{}');
 
             const linkupResponse = await this.searchLinkup(args.query);
 
