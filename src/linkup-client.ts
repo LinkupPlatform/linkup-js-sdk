@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { ZodObject, ZodRawShape } from 'zod';
 import zodToJsonSchema from 'zod-to-json-schema';
+import { version } from '../package.json';
 import {
   ApiConfig,
   FetchParams,
@@ -12,7 +13,7 @@ import { refineError } from './utils/refine-error.utils';
 import { isZodObject } from './utils/schema.utils';
 
 export class LinkupClient {
-  private readonly USER_AGENT = 'Linkup-JS-SDK/2.5.1';
+  private readonly USER_AGENT = `Linkup-JS-SDK/${version}`;
   private readonly client: AxiosInstance;
 
   constructor(config: ApiConfig) {
