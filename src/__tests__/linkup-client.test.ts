@@ -127,7 +127,7 @@ describe('LinkupClient', () => {
       baseURL: 'http://foo.bar/baz',
       headers: {
         Authorization: 'Bearer 1234',
-        'User-Agent': 'Linkup-JS-SDK/2.5.1',
+        'User-Agent': 'Linkup-JS-SDK/0.0.0',
       },
     });
   });
@@ -138,12 +138,14 @@ describe('LinkupClient', () => {
         answer: 'foo',
         sources: [
           {
+            favicon: 'http://foo.bar/favicon.ico',
             name: 'foo',
             snippet: 'foo bar baz',
             url: 'http://foo.bar/baz',
           },
           {
             content: 'foo bar baz',
+            favicon: 'http://foo.bar/favicon.ico',
             name: 'bar',
             type: 'text',
             url: 'http://foo.bar/baz',
@@ -167,10 +169,14 @@ describe('LinkupClient', () => {
     expect((result.sources.at(0) as Source)?.name).toEqual('foo');
     expect((result.sources.at(0) as Source)?.url).toEqual('http://foo.bar/baz');
     expect((result.sources.at(0) as Source)?.snippet).toEqual('foo bar baz');
+    expect((result.sources.at(0) as Source)?.favicon).toEqual('http://foo.bar/favicon.ico');
     expect((result.sources.at(1) as TextSearchResult)?.type).toEqual('text');
     expect((result.sources.at(1) as TextSearchResult)?.name).toEqual('bar');
     expect((result.sources.at(1) as TextSearchResult)?.url).toEqual('http://foo.bar/baz');
     expect((result.sources.at(1) as TextSearchResult)?.content).toEqual('foo bar baz');
+    expect((result.sources.at(1) as TextSearchResult)?.favicon).toEqual(
+      'http://foo.bar/favicon.ico',
+    );
     expect((result.sources.at(2) as ImageSearchResult)?.type).toEqual('image');
     expect((result.sources.at(2) as ImageSearchResult)?.name).toEqual('baz');
     expect((result.sources.at(2) as ImageSearchResult)?.url).toEqual('http://foo.bar/baz');
@@ -216,6 +222,7 @@ describe('LinkupClient', () => {
         sources: [
           {
             content: 'Lorem ipsum dolor sit amet',
+            favicon: 'http://foo.bar/favicon.ico',
             name: 'foo',
             type: 'text',
             url: 'http://foo.bar/baz',
@@ -237,6 +244,7 @@ describe('LinkupClient', () => {
       sources: [
         {
           content: 'Lorem ipsum dolor sit amet',
+          favicon: 'http://foo.bar/favicon.ico',
           name: 'foo',
           type: 'text',
           url: 'http://foo.bar/baz',

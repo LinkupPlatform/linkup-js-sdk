@@ -22,6 +22,7 @@ export type StructuredSource = {
   content: string;
   name: string;
   type: string;
+  favicon: string;
 };
 
 export type SearchParams = {
@@ -65,6 +66,7 @@ export type TextSearchResult = {
   name: string;
   url: string;
   content: string;
+  favicon: string;
 };
 
 export type ImageSearchResult = {
@@ -82,6 +84,7 @@ export type Source = {
   name: string;
   url: string;
   snippet: string;
+  favicon: string;
 };
 
 export type LinkupApiError = {
