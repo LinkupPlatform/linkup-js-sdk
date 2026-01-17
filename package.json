@@ -1,8 +1,8 @@
 {
   "name": "linkup-sdk",
   "version": "0.0.0",
-  "main": "src/dist/index.js",
-  "types": "src/dist/index.d.ts",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
   "scripts": {
     "build": "tsc",
     "commitlint": "commitlint --edit",
