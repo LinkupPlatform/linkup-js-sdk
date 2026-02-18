@@ -24,17 +24,25 @@ import { refineError } from '../utils/refine-error.utils';
 jest.mock('axios');
 const maxios = axios as jest.Mocked<typeof axios>;
 
-const mockAxiosInstance = {
+type MockAxiosInstance = {
+  interceptors: {
+    response: {
+      use: jest.Mock;
+    };
+  };
+  post: jest.Mock;
+};
+
+const mockAxiosInstance: MockAxiosInstance = {
   interceptors: {
     response: {
       use: jest.fn(),
     },
   },
   post: jest.fn(),
-  // biome-ignore lint/suspicious/noExplicitAny: testing purpose
-} as any;
+};
 
-maxios.create = jest.fn(() => mockAxiosInstance);
+maxios.create = jest.fn(() => mockAxiosInstance as unknown as import('axios').AxiosInstance);
 
 describe('LinkupClient', () => {
   const underTest = new LinkupClient({ apiKey: '1234' });
@@ -55,11 +63,15 @@ describe('LinkupClient', () => {
       query: 'foo',
     });
 
-    expect(mockAxiosInstance.post).toHaveBeenCalledWith('/search', {
-      depth: 'deep',
-      outputType: 'sourcedAnswer',
-      q: 'foo',
-    });
+    expect(mockAxiosInstance.post).toHaveBeenCalledWith(
+      '/search',
+      {
+        depth: 'deep',
+        outputType: 'sourcedAnswer',
+        q: 'foo',
+      },
+      expect.any(Object),
+    );
   });
 
   it('should include all valid parameters when provided', async () => {
@@ -83,32 +95,35 @@ describe('LinkupClient', () => {
       wrongParameter: 'wrong',
     });
 
-    expect(mockAxiosInstance.post).toHaveBeenCalledWith('/search', {
-      depth: 'deep',
-      excludeDomains: ['baz.com', 'qux.com'],
-      fromDate: fromDate.toISOString(),
-      includeDomains: ['foo.com', 'bar.com'],
-      includeImages: true,
-      includeInlineCitations: true,
-      maxResults: 10,
-      outputType: 'sourcedAnswer',
-      q: 'foo',
-      toDate: toDate.toISOString(),
-    });
+    expect(mockAxiosInstance.post).toHaveBeenCalledWith(
+      '/search',
+      {
+        depth: 'deep',
+        excludeDomains: ['baz.com', 'qux.com'],
+        fromDate: fromDate.toISOString(),
+        includeDomains: ['foo.com', 'bar.com'],
+        includeImages: true,
+        includeInlineCitations: true,
+        maxResults: 10,
+        outputType: 'sourcedAnswer',
+        q: 'foo',
+        toDate: toDate.toISOString(),
+      },
+      expect.any(Object),
+    );
   });
 
   it('should use custom base URL if provided', async () => {
-    const customMockInstance = {
+    const customMockInstance: MockAxiosInstance = {
       interceptors: {
         response: {
           use: jest.fn(),
         },
       },
       post: jest.fn(),
-      // biome-ignore lint/suspicious/noExplicitAny: testing purpose
-    } as any;
+    };
 
-    maxios.create = jest.fn(() => customMockInstance);
+    maxios.create = jest.fn(() => customMockInstance as unknown as import('axios').AxiosInstance);
 
     const client = new LinkupClient({
       apiKey: '1234',
@@ -273,6 +288,7 @@ describe('LinkupClient', () => {
         q: 'foo',
         structuredOutputSchema: expect.stringContaining('"foo":{"type":"string"}'),
       }),
+      expect.any(Object),
     );
   });
 
@@ -402,7 +418,6 @@ describe('LinkupClient', () => {
       chat: { completions: { create: jest.fn() } },
       responses: { create: responsesCreate },
     } as unknown as OpenAI;
-    const searchSpy = jest.spyOn(underTest, 'search');
     const wrapper = underTest.wrap(openAIClient);
 
     mockAxiosInstance.post.mockResolvedValueOnce({
@@ -424,14 +439,17 @@ describe('LinkupClient', () => {
     const response = await wrapper.responses.create({ input: 'foo', model: 'model' });
 
     expect(response).toBe(finalResponse);
-    expect(searchSpy).toHaveBeenCalledWith({
-      depth: 'standard',
-      outputType: 'searchResults',
-      query: 'foo-bar',
-    });
+    // Verify the API was called with the search parameters
+    expect(mockAxiosInstance.post).toHaveBeenCalledWith(
+      '/search',
+      expect.objectContaining({
+        depth: 'standard',
+        outputType: 'searchResults',
+        q: 'foo-bar',
+      }),
+      expect.any(Object),
+    );
     expect(responsesCreate).toHaveBeenCalledTimes(2);
-
-    searchSpy.mockRestore();
   });
 
   it('should refine errors', async () => {
