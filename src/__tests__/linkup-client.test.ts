@@ -1,4 +1,5 @@
 import axios, { type AxiosResponse } from 'axios';
+import OpenAI from 'openai';
 import { z } from 'zod';
 import {
   LinkupAuthenticationError,
@@ -10,6 +11,7 @@ import {
   LinkupUnknownError,
 } from '../errors';
 import { LinkupClient } from '../linkup-client';
+import { OpenAILinkupWrapper } from '../openai-wrapper';
 import type {
   ImageSearchResult,
   LinkupApiError,
@@ -22,17 +24,25 @@ import { refineError } from '../utils/refine-error.utils';
 jest.mock('axios');
 const maxios = axios as jest.Mocked<typeof axios>;
 
-const mockAxiosInstance = {
+type MockAxiosInstance = {
+  interceptors: {
+    response: {
+      use: jest.Mock;
+    };
+  };
+  post: jest.Mock;
+};
+
+const mockAxiosInstance: MockAxiosInstance = {
   interceptors: {
     response: {
       use: jest.fn(),
     },
   },
   post: jest.fn(),
-  // biome-ignore lint/suspicious/noExplicitAny: testing purpose
-} as any;
+};
 
-maxios.create = jest.fn(() => mockAxiosInstance);
+maxios.create = jest.fn(() => mockAxiosInstance as unknown as import('axios').AxiosInstance);
 
 describe('LinkupClient', () => {
   const underTest = new LinkupClient({ apiKey: '1234' });
@@ -53,11 +63,15 @@ describe('LinkupClient', () => {
       query: 'foo',
     });
 
-    expect(mockAxiosInstance.post).toHaveBeenCalledWith('/search', {
-      depth: 'deep',
-      outputType: 'sourcedAnswer',
-      q: 'foo',
-    });
+    expect(mockAxiosInstance.post).toHaveBeenCalledWith(
+      '/search',
+      {
+        depth: 'deep',
+        outputType: 'sourcedAnswer',
+        q: 'foo',
+      },
+      {},
+    );
   });
 
   it('should include all valid parameters when provided', async () => {
@@ -81,32 +95,35 @@ describe('LinkupClient', () => {
       wrongParameter: 'wrong',
     });
 
-    expect(mockAxiosInstance.post).toHaveBeenCalledWith('/search', {
-      depth: 'deep',
-      excludeDomains: ['baz.com', 'qux.com'],
-      fromDate: fromDate.toISOString(),
-      includeDomains: ['foo.com', 'bar.com'],
-      includeImages: true,
-      includeInlineCitations: true,
-      maxResults: 10,
-      outputType: 'sourcedAnswer',
-      q: 'foo',
-      toDate: toDate.toISOString(),
-    });
+    expect(mockAxiosInstance.post).toHaveBeenCalledWith(
+      '/search',
+      {
+        depth: 'deep',
+        excludeDomains: ['baz.com', 'qux.com'],
+        fromDate: fromDate.toISOString(),
+        includeDomains: ['foo.com', 'bar.com'],
+        includeImages: true,
+        includeInlineCitations: true,
+        maxResults: 10,
+        outputType: 'sourcedAnswer',
+        q: 'foo',
+        toDate: toDate.toISOString(),
+      },
+      {},
+    );
   });
 
   it('should use custom base URL if provided', async () => {
-    const customMockInstance = {
+    const customMockInstance: MockAxiosInstance = {
       interceptors: {
         response: {
           use: jest.fn(),
         },
       },
       post: jest.fn(),
-      // biome-ignore lint/suspicious/noExplicitAny: testing purpose
-    } as any;
+    };
 
-    maxios.create = jest.fn(() => customMockInstance);
+    maxios.create = jest.fn(() => customMockInstance as unknown as import('axios').AxiosInstance);
 
     const client = new LinkupClient({
       apiKey: '1234',
@@ -271,6 +288,7 @@ describe('LinkupClient', () => {
         q: 'foo',
         structuredOutputSchema: expect.stringContaining('"foo":{"type":"string"}'),
       }),
+      {},
     );
   });
 
@@ -377,6 +395,65 @@ describe('LinkupClient', () => {
         expect((e as LinkupFetchError).message).toEqual('Failed to fetch the content from the URL');
       }
     });
+  });
+
+  it('wrap returns a openAI wrapper instance', () => {
+    const responsesCreate = jest.fn();
+    const openAIClient = {
+      chat: { completions: { create: jest.fn() } },
+      responses: { create: responsesCreate },
+    } as unknown as OpenAI;
+
+    const wrapper = underTest.wrap(openAIClient);
+
+    expect(wrapper).toBeInstanceOf(OpenAILinkupWrapper);
+    expect(wrapper.responses).toBeDefined();
+    expect(wrapper.chat).toBeDefined();
+    expect(responsesCreate).not.toHaveBeenCalled();
+  });
+
+  it('wrap should return a openAI wrapper bound to the client search method', async () => {
+    const responsesCreate = jest.fn();
+    const openAIClient = {
+      chat: { completions: { create: jest.fn() } },
+      responses: { create: responsesCreate },
+    } as unknown as OpenAI;
+    const wrapper = underTest.wrap(openAIClient);
+
+    mockAxiosInstance.post.mockResolvedValueOnce({
+      data: { results: [{ id: '1' }] },
+    } as AxiosResponse);
+
+    const firstResponse = {
+      output: [
+        {
+          arguments: JSON.stringify({ query: 'foo-bar' }),
+          name: 'search_web',
+          type: 'function_call',
+        },
+      ],
+    };
+    const finalResponse = { final: true };
+    responsesCreate.mockResolvedValueOnce(firstResponse).mockResolvedValueOnce(finalResponse);
+
+    const response = await wrapper.responses.create({ input: 'foo', model: 'model' });
+
+    expect(response).toBe(finalResponse);
+    // Verify the API was called with the search parameters
+    expect(mockAxiosInstance.post).toHaveBeenCalledWith(
+      '/search',
+      expect.objectContaining({
+        depth: 'standard',
+        outputType: 'searchResults',
+        q: 'foo-bar',
+      }),
+      {
+        headers: {
+          'User-Agent': 'Linkup-JS-SDK-wrapper/0.0.0',
+        },
+      },
+    );
+    expect(responsesCreate).toHaveBeenCalledTimes(2);
   });
 
   it('should refine errors', async () => {

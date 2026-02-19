@@ -48,10 +48,12 @@
     "knip": "^5.61.2",
     "semantic-release": "^24.2.5",
     "ts-jest": "^29.2.5",
+    "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   },
   "dependencies": {
     "axios": "^1.8.2",
+    "openai": "^6.15.0",
     "zod": "^3.24.1",
     "zod-to-json-schema": "^3.24.1"
   },

@@ -1,7 +1,9 @@
 import axios, { AxiosInstance } from 'axios';
+import OpenAI from 'openai';
 import { ZodObject, ZodRawShape } from 'zod';
 import zodToJsonSchema from 'zod-to-json-schema';
 import { version } from '../package.json';
+import { OpenAILinkupWrapper } from './openai-wrapper';
 import {
   ApiConfig,
   FetchParams,
@@ -14,6 +16,7 @@ import { isZodObject } from './utils/schema.utils';
 
 export class LinkupClient {
   private readonly USER_AGENT = `Linkup-JS-SDK/${version}`;
+  private readonly USER_AGENT_WRAPPER = `Linkup-JS-SDK-wrapper/${version}`;
   private readonly client: AxiosInstance;
 
   constructor(config: ApiConfig) {
@@ -39,7 +42,18 @@ export class LinkupClient {
   }
 
   async search<T extends SearchParams>(params: T): Promise<LinkupSearchResponse<T>> {
-    return this.client.post('/search', this.sanitizeParams(params)).then(response => response.data);
+    return this.searchWithUserAgent(params);
+  }
+
+  private async searchWithUserAgent<T extends SearchParams>(
+    params: T,
+    userAgent?: string,
+  ): Promise<LinkupSearchResponse<T>> {
+    return this.client
+      .post('/search', this.sanitizeParams(params), {
+        ...(userAgent && { headers: { 'User-Agent': userAgent } }),
+      })
+      .then(response => response.data);
   }
 
   async fetch<T extends FetchParams>(params: T): Promise<LinkupFetchResponse<T>> {
@@ -90,5 +104,11 @@ export class LinkupClient {
     }
 
     return result;
+  }
+
+  wrap(openAIClient: OpenAI): OpenAILinkupWrapper {
+    const wrappedSearch = (params: SearchParams & { outputType: 'searchResults' }) =>
+      this.searchWithUserAgent(params, this.USER_AGENT_WRAPPER);
+    return new OpenAILinkupWrapper(openAIClient, wrappedSearch);
   }
 }
