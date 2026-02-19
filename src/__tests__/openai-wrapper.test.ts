@@ -44,6 +44,18 @@ describe('OpenAILinkupWrapper', () => {
       expect(result).toBe(firstResponse);
       expect(linkupSearch).not.toHaveBeenCalled();
       expect(responsesCreate).toHaveBeenCalledTimes(1);
+
+      // Verify search_web tool was provided to OpenAI
+      const firstCall = responsesCreate.mock.calls[0][0];
+      expect(firstCall.tools).toBeDefined();
+      expect(firstCall.tools).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            description: expect.any(String),
+            name: 'search_web',
+          }),
+        ]),
+      );
     });
 
     it('invokes linkup search when the response requests search_web', async () => {
@@ -159,6 +171,38 @@ describe('OpenAILinkupWrapper', () => {
       // Result should be the final response from second call
       expect(result).toBe(finalResponse);
     });
+
+    it('throws error when input is missing', async () => {
+      const { client } = createMockOpenAIClient();
+      const linkupSearch = jest.fn();
+      const wrapper = new OpenAILinkupWrapper(client, linkupSearch);
+
+      await expect(
+        wrapper.responses.create({ input: undefined, model: 'model' } as unknown as any),
+      ).rejects.toThrow('Input is required for creating a response');
+    });
+
+    it('throws error when user tools are provided', async () => {
+      const { client } = createMockOpenAIClient();
+      const linkupSearch = jest.fn();
+      const wrapper = new OpenAILinkupWrapper(client, linkupSearch);
+
+      await expect(
+        wrapper.responses.create({
+          input: 'question',
+          model: 'model',
+          tools: [
+            {
+              description: 'test',
+              name: 'test_tool',
+              parameters: {},
+              strict: false,
+              type: 'function',
+            },
+          ],
+        } as any),
+      ).rejects.toThrow('User tools are not supported in the wrapper implementation.');
+    });
   });
 
   describe('chat.completions.create flow', () => {
@@ -180,6 +224,21 @@ describe('OpenAILinkupWrapper', () => {
       expect(result).toBe(firstChatResponse);
       expect(chatCreate).toHaveBeenCalledTimes(1);
       expect(linkupSearch).not.toHaveBeenCalled();
+
+      // Verify search_web tool was provided to OpenAI
+      const firstCall = chatCreate.mock.calls[0][0];
+      expect(firstCall.tools).toBeDefined();
+      expect(firstCall.tools).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            function: expect.objectContaining({
+              description: expect.any(String),
+              name: 'search_web',
+            }),
+            type: 'function',
+          }),
+        ]),
+      );
     });
 
     it('retries the completion when search_web tool calls arrive', async () => {
@@ -329,6 +388,25 @@ describe('OpenAILinkupWrapper', () => {
       // Result should include tool calls from final response
       const resultMessage = result.choices?.[0]?.message;
       expect(resultMessage?.tool_calls).toBeDefined();
+    });
+
+    it('throws error when user tools are provided', async () => {
+      const { client } = createMockOpenAIClient();
+      const linkupSearch = jest.fn();
+      const wrapper = new OpenAILinkupWrapper(client, linkupSearch);
+
+      await expect(
+        wrapper.chat.completions.create({
+          messages: [{ content: 'hello', role: 'user' }],
+          model: 'model',
+          tools: [
+            {
+              function: { description: 'test', name: 'test_tool', parameters: {} },
+              type: 'function',
+            },
+          ],
+        } as any),
+      ).rejects.toThrow('User tools are not supported in the wrapper implementation.');
     });
   });
 });

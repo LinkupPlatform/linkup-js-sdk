@@ -28,7 +28,7 @@ export class OpenAILinkupWrapper {
     },
   } as const;
 
-  private readonly tools: Tool[] = [
+  private readonly responseTools: Tool[] = [
     {
       description: this.searchWebDefinition.description,
       name: this.searchWebDefinition.name,
@@ -73,7 +73,9 @@ export class OpenAILinkupWrapper {
           throw new Error('Input is required for creating a response');
         }
 
-        const mergeTools: Tool[] = [...this.tools, ...(tools || [])];
+        if (tools) {
+          throw new Error('User tools are not supported in the wrapper implementation.');
+        }
 
         const conversation: ResponseInput = Array.isArray(input)
           ? input
@@ -82,7 +84,7 @@ export class OpenAILinkupWrapper {
         const first = await this.clientOpenAI.responses.create({
           input: conversation,
           model,
-          tools: mergeTools,
+          tools: this.responseTools,
           ...otherParams,
         });
 
@@ -90,27 +92,17 @@ export class OpenAILinkupWrapper {
           items => items.type === 'function_call' && items.name === this.searchWebDefinition.name,
         ) as ResponseFunctionToolCall[];
 
-        // If our tool wasn't called, return the first response directly to avoid unnecessary second call to the model
         if (searchWebToolCalls.length === 0) {
           return first;
         }
 
-        const reasoningMessage = first.output?.find(item => item.type === 'reasoning');
-
-        // We need to include the reasoning message in the conversation if it exists to provide context for the tool calls
-        if (reasoningMessage) {
-          conversation.push(reasoningMessage);
-        }
-
-        // Add tool calls to the conversation before getting the tool outputs (mandatory for the function tool calls)
-        conversation.push(...searchWebToolCalls);
+        conversation.push(...first.output);
 
         for (const toolCall of searchWebToolCalls) {
           const args = JSON.parse(toolCall.arguments);
 
           const linkupResponse = await this.searchLinkup(args.query);
 
-          // Add tool output to the conversation
           conversation.push({
             call_id: toolCall.call_id,
             output: JSON.stringify(
@@ -122,13 +114,9 @@ export class OpenAILinkupWrapper {
           });
         }
 
-        // Get final response with linkup results
-        // If tools submitted by the user are called, they will have to handle it
-        // in their implementation to have a final response.
         const final = await this.clientOpenAI.responses.create({
           input: conversation,
           model,
-          tools,
           ...otherParams,
         });
 
@@ -143,12 +131,14 @@ export class OpenAILinkupWrapper {
         create: async (params: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming) => {
           const { model, messages, tools, ...otherParams } = params;
 
-          const mergedTools = [...this.chatTools, ...(tools || [])];
+          if (tools) {
+            throw new Error('User tools are not supported in the wrapper implementation.');
+          }
 
           const first = await this.clientOpenAI.chat.completions.create({
             messages,
             model,
-            tools: mergedTools,
+            tools: this.chatTools,
             ...otherParams,
           });
 
@@ -179,11 +169,9 @@ export class OpenAILinkupWrapper {
             });
           }
 
-          // Get final response with linkup results
           const final = await this.clientOpenAI.chat.completions.create({
             messages: nextMessages,
             model,
-            tools,
             ...otherParams,
           });
 
