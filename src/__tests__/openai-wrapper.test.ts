@@ -177,9 +177,9 @@ describe('OpenAILinkupWrapper', () => {
       const linkupSearch = jest.fn();
       const wrapper = new OpenAILinkupWrapper(client, linkupSearch);
 
-      await expect(
-        wrapper.responses.create({ input: undefined, model: 'model' } as unknown as any),
-      ).rejects.toThrow('Input is required for creating a response');
+      await expect(wrapper.responses.create({ input: undefined, model: 'model' })).rejects.toThrow(
+        'Input is required for creating a response',
+      );
     });
 
     it('throws error when user tools are provided', async () => {
@@ -200,7 +200,7 @@ describe('OpenAILinkupWrapper', () => {
               type: 'function',
             },
           ],
-        } as any),
+        }),
       ).rejects.toThrow('User tools are not supported in the wrapper implementation.');
     });
   });
@@ -405,7 +405,7 @@ describe('OpenAILinkupWrapper', () => {
               type: 'function',
             },
           ],
-        } as any),
+        }),
       ).rejects.toThrow('User tools are not supported in the wrapper implementation.');
     });
   });

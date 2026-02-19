@@ -70,7 +70,7 @@ describe('LinkupClient', () => {
         outputType: 'sourcedAnswer',
         q: 'foo',
       },
-      expect.any(Object),
+      {},
     );
   });
 
@@ -109,7 +109,7 @@ describe('LinkupClient', () => {
         q: 'foo',
         toDate: toDate.toISOString(),
       },
-      expect.any(Object),
+      {},
     );
   });
 
@@ -288,7 +288,7 @@ describe('LinkupClient', () => {
         q: 'foo',
         structuredOutputSchema: expect.stringContaining('"foo":{"type":"string"}'),
       }),
-      expect.any(Object),
+      {},
     );
   });
 
@@ -447,7 +447,11 @@ describe('LinkupClient', () => {
         outputType: 'searchResults',
         q: 'foo-bar',
       }),
-      expect.any(Object),
+      {
+        headers: {
+          'User-Agent': 'Linkup-JS-SDK-wrapper/0.0.0',
+        },
+      },
     );
     expect(responsesCreate).toHaveBeenCalledTimes(2);
   });
