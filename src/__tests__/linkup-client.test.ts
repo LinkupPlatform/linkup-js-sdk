@@ -1,8 +1,10 @@
 import axios, { type AxiosResponse } from 'axios';
 import { z } from 'zod';
 import {
+  FetchUrlIsFileError,
   LinkupAuthenticationError,
   LinkupFetchError,
+  LinkupFetchResponseTooLargeError,
   LinkupInsufficientCreditError,
   LinkupInvalidRequestError,
   LinkupNoResultError,
@@ -10,13 +12,7 @@ import {
   LinkupUnknownError,
 } from '../errors';
 import { LinkupClient } from '../linkup-client';
-import type {
-  ImageSearchResult,
-  LinkupApiError,
-  SearchParams,
-  Source,
-  TextSearchResult,
-} from '../types';
+import type { ImageSearchResult, SearchParams, Source, TextSearchResult } from '../types';
 import { refineError } from '../utils/refine-error.utils';
 
 jest.mock('axios');
@@ -355,201 +351,152 @@ describe('LinkupClient', () => {
         markdown: 'Fetched content',
       });
     });
-
-    it('should handle fetch errors', async () => {
-      const fetchError: LinkupApiError = {
-        error: {
-          code: 'FETCH_ERROR',
-          details: [],
-          message: 'Failed to fetch the content from the URL',
-        },
-        statusCode: 400,
-      };
-      mockAxiosInstance.post.mockRejectedValueOnce(refineError(fetchError));
-
-      try {
-        await underTest.fetch({
-          url: 'https://invalid-url.com',
-        });
-        fail('Expected fetch to throw an error');
-      } catch (e) {
-        expect(e).toBeInstanceOf(LinkupFetchError);
-        expect((e as LinkupFetchError).message).toEqual('Failed to fetch the content from the URL');
-      }
-    });
   });
 
-  it('should refine errors', async () => {
-    // 400 invalid
-    let invalidError: LinkupApiError = {
-      error: {
-        code: 'VALIDATION_ERROR',
-        details: [
-          {
-            field: 'outputType',
-            message:
-              'outputType must be one of the following values: sourcedAnswer, searchResults, structured',
+  describe('error refinement', () => {
+    it.each([
+      {
+        description: '400 VALIDATION_ERROR',
+        ErrorClass: LinkupInvalidRequestError,
+        expectedMessage:
+          'Validation failed outputType must be one of the following values: sourcedAnswer, searchResults, structured',
+        input: {
+          error: {
+            code: 'VALIDATION_ERROR',
+            details: [
+              {
+                field: 'outputType',
+                message:
+                  'outputType must be one of the following values: sourcedAnswer, searchResults, structured',
+              },
+            ],
+            message: 'Validation failed',
           },
-        ],
-        message: 'Validation failed',
+          statusCode: 400,
+        },
       },
-      statusCode: 400,
-    };
-    mockAxiosInstance.post.mockRejectedValueOnce(refineError(invalidError));
-
-    try {
-      await underTest.search({} as SearchParams);
-    } catch (e) {
-      expect(e).toBeInstanceOf(LinkupInvalidRequestError);
-      expect((e as LinkupInvalidRequestError).message).toEqual(
-        'Validation failed outputType must be one of the following values: sourcedAnswer, searchResults, structured',
-      );
-    }
-
-    // 400 empty result
-    invalidError = {
-      error: {
-        code: 'SEARCH_QUERY_NO_RESULT',
-        details: [],
-        message: 'The query did not yield any result',
+      {
+        description: '400 SEARCH_QUERY_NO_RESULT',
+        ErrorClass: LinkupNoResultError,
+        expectedMessage: 'The query did not yield any result',
+        input: {
+          error: {
+            code: 'SEARCH_QUERY_NO_RESULT',
+            details: [],
+            message: 'The query did not yield any result',
+          },
+          statusCode: 400,
+        },
       },
-      statusCode: 400,
-    };
-    mockAxiosInstance.post.mockRejectedValueOnce(refineError(invalidError));
-
-    try {
-      await underTest.search({} as SearchParams);
-    } catch (e) {
-      expect(e).toBeInstanceOf(LinkupNoResultError);
-      expect((e as LinkupNoResultError).message).toEqual('The query did not yield any result');
-    }
-
-    // 401
-    invalidError = {
-      error: {
-        code: 'UNAUTHORIZED',
-        details: [],
-        message: 'Unauthorized action',
+      {
+        description: '400 FETCH_ERROR',
+        ErrorClass: LinkupFetchError,
+        expectedMessage: 'Failed to fetch the content from the URL',
+        input: {
+          error: {
+            code: 'FETCH_ERROR',
+            details: [],
+            message: 'Failed to fetch the content from the URL',
+          },
+          statusCode: 400,
+        },
       },
-      statusCode: 401,
-    };
-    mockAxiosInstance.post.mockRejectedValueOnce(refineError(invalidError));
-
-    try {
-      await underTest.search({} as SearchParams);
-    } catch (e) {
-      expect(e).toBeInstanceOf(LinkupAuthenticationError);
-      expect((e as LinkupAuthenticationError).message).toEqual('Unauthorized action');
-    }
-
-    // 403
-    invalidError = {
-      error: {
-        code: 'FORBIDDEN',
-        details: [],
-        message: 'Forbidden action',
+      {
+        description: '400 FETCH_RESPONSE_TOO_LARGE',
+        ErrorClass: LinkupFetchResponseTooLargeError,
+        expectedMessage: 'The fetched response is too large',
+        input: {
+          error: {
+            code: 'FETCH_RESPONSE_TOO_LARGE',
+            details: [],
+            message: 'The fetched response is too large',
+          },
+          statusCode: 400,
+        },
       },
-      statusCode: 403,
-    };
-    mockAxiosInstance.post.mockRejectedValueOnce(refineError(invalidError));
-
-    try {
-      await underTest.search({} as SearchParams);
-    } catch (e) {
-      expect(e).toBeInstanceOf(LinkupAuthenticationError);
-      expect((e as LinkupAuthenticationError).message).toEqual('Forbidden action');
-    }
-
-    // 429 - Insufficient credits
-    invalidError = {
-      error: {
-        code: 'INSUFFICIENT_FUNDS_CREDITS',
-        details: [],
-        message: 'You do not have enough credits to perform this request.',
+      {
+        description: '400 FETCH_URL_IS_FILE',
+        ErrorClass: FetchUrlIsFileError,
+        expectedMessage: 'The URL points to a file',
+        input: {
+          error: { code: 'FETCH_URL_IS_FILE', details: [], message: 'The URL points to a file' },
+          statusCode: 400,
+        },
       },
-      statusCode: 429,
-    };
-    mockAxiosInstance.post.mockRejectedValueOnce(refineError(invalidError));
-
-    try {
-      await underTest.search({} as SearchParams);
-    } catch (e) {
-      expect(e).toBeInstanceOf(LinkupInsufficientCreditError);
-      expect((e as LinkupInsufficientCreditError).message).toEqual(
-        'You do not have enough credits to perform this request.',
-      );
-    }
-
-    // 429 - Too many requests
-    invalidError = {
-      error: {
-        code: 'TOO_MANY_REQUESTS',
-        details: [],
-        message: 'Too many requests',
+      {
+        description: '401',
+        ErrorClass: LinkupAuthenticationError,
+        expectedMessage: 'Unauthorized action',
+        input: {
+          error: { code: 'UNAUTHORIZED', details: [], message: 'Unauthorized action' },
+          statusCode: 401,
+        },
       },
-      statusCode: 429,
-    };
-    mockAxiosInstance.post.mockRejectedValueOnce(refineError(invalidError));
-
-    try {
-      await underTest.search({} as SearchParams);
-    } catch (e) {
-      expect(e).toBeInstanceOf(LinkupTooManyRequestsError);
-      expect((e as LinkupTooManyRequestsError).message).toEqual('Too many requests');
-    }
-
-    // 429 - Other
-    invalidError = {
-      error: {
-        code: 'FOOBAR',
-        details: [],
-        message: 'foobar',
+      {
+        description: '403',
+        ErrorClass: LinkupAuthenticationError,
+        expectedMessage: 'Forbidden action',
+        input: {
+          error: { code: 'FORBIDDEN', details: [], message: 'Forbidden action' },
+          statusCode: 403,
+        },
       },
-      statusCode: 429,
-    };
-    mockAxiosInstance.post.mockRejectedValueOnce(refineError(invalidError));
-
-    try {
-      await underTest.search({} as SearchParams);
-    } catch (e) {
-      expect(e).toBeInstanceOf(LinkupUnknownError);
-      expect((e as LinkupUnknownError).message).toEqual(
-        `An unknown error occurred: ${invalidError.error.message}`,
-      );
-    }
-
-    // 500
-    invalidError = {
-      error: {
-        code: 'INTERNAL_SERVER_ERROR',
-        details: [],
-        message: 'Internal server error',
+      {
+        description: '429 INSUFFICIENT_FUNDS_CREDITS',
+        ErrorClass: LinkupInsufficientCreditError,
+        expectedMessage: 'You do not have enough credits to perform this request.',
+        input: {
+          error: {
+            code: 'INSUFFICIENT_FUNDS_CREDITS',
+            details: [],
+            message: 'You do not have enough credits to perform this request.',
+          },
+          statusCode: 429,
+        },
       },
-      statusCode: 500,
-    };
-    mockAxiosInstance.post.mockRejectedValueOnce(refineError(invalidError));
+      {
+        description: '429 TOO_MANY_REQUESTS',
+        ErrorClass: LinkupTooManyRequestsError,
+        expectedMessage: 'Too many requests',
+        input: {
+          error: { code: 'TOO_MANY_REQUESTS', details: [], message: 'Too many requests' },
+          statusCode: 429,
+        },
+      },
+      {
+        description: '429 unknown code',
+        ErrorClass: LinkupUnknownError,
+        expectedMessage: 'An unknown error occurred: foobar',
+        input: {
+          error: { code: 'FOOBAR', details: [], message: 'foobar' },
+          statusCode: 429,
+        },
+      },
+      {
+        description: '500',
+        ErrorClass: LinkupUnknownError,
+        expectedMessage: 'An unknown error occurred: Internal server error',
+        input: {
+          error: { code: 'INTERNAL_SERVER_ERROR', details: [], message: 'Internal server error' },
+          statusCode: 500,
+        },
+      },
+    ])(
+      'should throw the correct error on $description',
+      async ({ input, ErrorClass, expectedMessage }) => {
+        mockAxiosInstance.post.mockRejectedValueOnce(refineError(input));
+        const error = await underTest.search({} as SearchParams).catch(e => e);
+        expect(error).toBeInstanceOf(ErrorClass);
+        expect(error.message).toEqual(expectedMessage);
+      },
+    );
 
-    try {
-      await underTest.search({} as SearchParams);
-    } catch (e) {
-      expect(e).toBeInstanceOf(LinkupUnknownError);
-      expect((e as LinkupUnknownError).message).toEqual(
-        `An unknown error occurred: ${invalidError.error.message}`,
-      );
-    }
-  });
-
-  it('should handle malformed error responses without error property', async () => {
-    // biome-ignore lint/suspicious/noExplicitAny: testing malformed response
-    const malformedError = { statusCode: 500 } as any;
-    mockAxiosInstance.post.mockRejectedValueOnce(refineError(malformedError));
-
-    try {
-      await underTest.search({} as SearchParams);
-      fail('Expected search to throw an error');
-    } catch (e) {
-      expect(e).toBeInstanceOf(LinkupUnknownError);
-      expect((e as LinkupUnknownError).message).toContain('An unknown error occurred');
-    }
+    it('should handle malformed error responses without error property', async () => {
+      // biome-ignore lint/suspicious/noExplicitAny: testing malformed response
+      mockAxiosInstance.post.mockRejectedValueOnce(refineError({ statusCode: 500 } as any));
+      const error = await underTest.search({} as SearchParams).catch(e => e);
+      expect(error).toBeInstanceOf(LinkupUnknownError);
+      expect(error.message).toContain('An unknown error occurred');
+    });
   });
 });
