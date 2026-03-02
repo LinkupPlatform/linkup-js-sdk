@@ -1,7 +1,9 @@
 import {
+  FetchUrlIsFileError,
   LinkupAuthenticationError,
   LinkupError,
   LinkupFetchError,
+  LinkupFetchResponseTooLargeError,
   LinkupInsufficientCreditError,
   LinkupInvalidRequestError,
   LinkupNoResultError,
@@ -31,13 +33,18 @@ export const refineError = (e: LinkupApiError): LinkupError => {
 
   switch (statusCode) {
     case 400:
-      if (code === 'SEARCH_QUERY_NO_RESULT') {
-        return new LinkupNoResultError(message);
+      switch (code) {
+        case 'SEARCH_QUERY_NO_RESULT':
+          return new LinkupNoResultError(message);
+        case 'FETCH_ERROR':
+          return new LinkupFetchError(message);
+        case 'FETCH_RESPONSE_TOO_LARGE':
+          return new LinkupFetchResponseTooLargeError(message);
+        case 'FETCH_URL_IS_FILE':
+          return new FetchUrlIsFileError(message);
+        default:
+          return new LinkupInvalidRequestError(concatErrorAndDetails(e));
       }
-      if (code === 'FETCH_ERROR') {
-        return new LinkupFetchError(message);
-      }
-      return new LinkupInvalidRequestError(concatErrorAndDetails(e));
     case 401:
     case 403:
       return new LinkupAuthenticationError(message);

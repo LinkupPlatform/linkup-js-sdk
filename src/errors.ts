@@ -96,3 +96,25 @@ export class LinkupFetchError extends LinkupError {
     }
   }
 }
+
+export class LinkupFetchResponseTooLargeError extends LinkupError {
+  constructor(message?: string) {
+    super(message);
+    this.name = LinkupFetchResponseTooLargeError.name;
+
+    if ('captureStackTrace' in Error) {
+      Error.captureStackTrace(this, LinkupFetchResponseTooLargeError);
+    }
+  }
+}
+
+export class FetchUrlIsFileError extends LinkupError {
+  constructor(message?: string) {
+    super(message);
+    this.name = FetchUrlIsFileError.name;
+
+    if ('captureStackTrace' in Error) {
+      Error.captureStackTrace(this, FetchUrlIsFileError);
+    }
+  }
+}
