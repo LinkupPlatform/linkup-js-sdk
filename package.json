@@ -103,8 +103,13 @@
     ]
   },
   "knip": {
-    "entry": ["src/index.ts", "src/x402/index.ts"],
-    "exclude": ["optionalPeerDependencies"]
+    "entry": [
+      "src/index.ts",
+      "src/x402/index.ts"
+    ],
+    "exclude": [
+      "optionalPeerDependencies"
+    ]
   },
   "commitlint": {
     "extends": [
