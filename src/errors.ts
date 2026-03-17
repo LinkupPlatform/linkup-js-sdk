@@ -108,6 +108,18 @@ export class LinkupFetchResponseTooLargeError extends LinkupError {
   }
 }
 
+// Payment required error, raised when x402 payment signing fails or the 402 persists after retry.
+export class LinkupPaymentRequiredError extends LinkupError {
+  constructor(message?: string) {
+    super(message);
+    this.name = LinkupPaymentRequiredError.name;
+
+    if ('captureStackTrace' in Error) {
+      Error.captureStackTrace(this, LinkupPaymentRequiredError);
+    }
+  }
+}
+
 export class FetchUrlIsFileError extends LinkupError {
   constructor(message?: string) {
     super(message);
