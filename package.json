@@ -3,6 +3,16 @@
   "version": "0.0.0",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
+    },
+    "./x402": {
+      "types": "./dist/src/x402/index.d.ts",
+      "default": "./dist/src/x402/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "commitlint": "commitlint --edit",
@@ -43,17 +53,35 @@
     "@commitlint/config-conventional": "^19.8.1",
     "@types/jest": "^29.5.14",
     "@types/node": "^24.0.4",
+    "@x402/evm": "^2.7.0",
     "husky": "^9.1.7",
     "jest": "^29.7.0",
     "knip": "^5.61.2",
     "semantic-release": "^24.2.5",
     "ts-jest": "^29.2.5",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "viem": "^2.47.4"
   },
   "dependencies": {
     "axios": "^1.8.2",
     "zod": "^3.24.1",
     "zod-to-json-schema": "^3.24.1"
+  },
+  "peerDependencies": {
+    "@x402/core": "^2.6.0",
+    "@x402/evm": "^2.6.0",
+    "viem": "^2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@x402/core": {
+      "optional": true
+    },
+    "@x402/evm": {
+      "optional": true
+    },
+    "viem": {
+      "optional": true
+    }
   },
   "release": {
     "branches": [
@@ -73,6 +101,10 @@
         }
       ]
     ]
+  },
+  "knip": {
+    "entry": ["src/index.ts", "src/x402/index.ts"],
+    "exclude": ["optionalPeerDependencies"]
   },
   "commitlint": {
     "extends": [
