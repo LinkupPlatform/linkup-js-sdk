@@ -103,3 +103,39 @@ fetchLinkup()
   .then(console.log)
   .catch(console.error);
 ```
+
+### 💳 X402 Payment Protocol
+
+The SDK supports the [X402 payment protocol](https://www.x402.org/), allowing you to pay for API
+calls with on-chain transactions instead of an API key.
+
+#### Prerequisites
+
+Install the required peer dependencies:
+
+```bash
+npm i viem @x402/core @x402/evm
+```
+
+#### 📝 Example
+
+```typescript
+import { LinkupClient } from 'linkup-sdk';
+import { createX402Signer } from 'linkup-sdk/x402';
+
+const signer = createX402Signer({
+  privateKey: '<YOUR WALLET PRIVATE KEY>',
+});
+
+const client = new LinkupClient({ signer });
+
+const askLinkup = () => client.search({
+  query: 'What is the X402 payment protocol?',
+  depth: 'standard',
+  outputType: 'sourcedAnswer',
+});
+
+askLinkup()
+  .then(console.log)
+  .catch(console.error);
+```
