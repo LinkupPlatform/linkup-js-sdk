@@ -1,3 +1,7 @@
+import { ExactEvmScheme, toClientEvmSigner } from '@x402/evm';
+import { createPublicClient, http, type LocalAccount } from 'viem';
+import { createX402Signer } from '../create-x402-signer';
+
 const mockAccount = { address: '0xmockAccount' };
 const mockPublicClient = { chain: { id: 8453 } };
 const mockHttpTransport = { type: 'http' };
@@ -26,10 +30,6 @@ jest.mock('@x402/evm', () => ({
 jest.mock('@x402/core/client', () => ({
   x402Client: jest.fn(() => mockClientInstance),
 }));
-
-import { ExactEvmScheme, toClientEvmSigner } from '@x402/evm';
-import { createPublicClient, http, type LocalAccount } from 'viem';
-import { createX402Signer } from '../create-x402-signer';
 
 describe('createX402Signer', () => {
   beforeEach(() => {

@@ -5,13 +5,10 @@ import { version } from '../package.json';
 import { LinkupPaymentRequiredError } from './errors';
 import {
   ApiConfig,
-  ApiKeyConfig,
   FetchParams,
-  isX402Config,
   LinkupFetchResponse,
   LinkupSearchResponse,
   SearchParams,
-  X402Config,
 } from './types';
 import { refineError } from './utils/refine-error.utils';
 import { isZodObject } from './utils/schema.utils';
@@ -21,19 +18,16 @@ export class LinkupClient {
   private readonly USER_AGENT = `Linkup-JS-SDK/${version}`;
   private readonly client: AxiosInstance;
 
-  constructor(config: ApiKeyConfig);
-  constructor(config: X402Config);
   constructor(config: ApiConfig) {
     const baseURL = config.baseUrl || 'https://api.linkup.so/v1';
-    const isX402 = isX402Config(config);
     const headers = {
       'User-Agent': this.USER_AGENT,
-      ...(!isX402 ? { Authorization: `Bearer ${config.apiKey}` } : {}),
+      ...('apiKey' in config ? { Authorization: `Bearer ${config.apiKey}` } : {}),
     };
 
     this.client = axios.create({ baseURL, headers });
 
-    if (isX402) {
+    if ('signer' in config) {
       this.setupX402Interceptor(config.signer);
     }
 
@@ -72,19 +66,27 @@ export class LinkupClient {
           );
         }
 
-        const { decodePaymentRequiredHeader, encodePaymentSignatureHeader } = await import(
-          '@x402/core/http'
-        );
+        try {
+          const { decodePaymentRequiredHeader, encodePaymentSignatureHeader } = await import(
+            '@x402/core/http'
+          );
 
-        const paymentRequired = decodePaymentRequiredHeader(paymentRequiredHeader);
-        const paymentPayload = await signer.createPaymentPayload(paymentRequired);
-        const paymentSignature = encodePaymentSignatureHeader(paymentPayload);
+          const paymentRequired = decodePaymentRequiredHeader(paymentRequiredHeader);
+          const paymentPayload = await signer.createPaymentPayload(paymentRequired);
+          const paymentSignature = encodePaymentSignatureHeader(paymentPayload);
 
-        const originalRequest = error.config;
-        originalRequest.headers['payment-signature'] = paymentSignature;
-        originalRequest._x402Retried = true;
+          const originalRequest = error.config;
+          originalRequest.headers['payment-signature'] = paymentSignature;
+          originalRequest._x402Retried = true;
 
-        return this.client.request(originalRequest);
+          return this.client.request(originalRequest);
+        } catch (error) {
+          return Promise.reject(
+            new LinkupPaymentRequiredError(
+              `X402 payment failed: ${error instanceof Error ? error.message : error}`,
+            ),
+          );
+        }
       },
     );
   }
