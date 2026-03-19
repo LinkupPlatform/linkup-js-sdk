@@ -1,12 +1,14 @@
 /** biome-ignore-all lint/complexity/noBannedTypes: needed for conditional props */
 import { ZodObject, ZodRawShape } from 'zod';
+import type { X402Signer } from './x402/types';
 
 export type SearchDepth = 'standard' | 'deep';
 
-export type ApiConfig = {
-  apiKey: string;
-  baseUrl?: string;
-};
+export type ApiKeyConfig = { apiKey: string; baseUrl?: string };
+
+export type X402Config = { signer: X402Signer; baseUrl?: string };
+
+export type ApiConfig = ApiKeyConfig | X402Config;
 
 export type Structured = Record<string, unknown>;
 

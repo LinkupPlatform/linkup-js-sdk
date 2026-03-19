@@ -8,14 +8,21 @@ import {
   LinkupInsufficientCreditError,
   LinkupInvalidRequestError,
   LinkupNoResultError,
+  LinkupPaymentRequiredError,
   LinkupTooManyRequestsError,
   LinkupUnknownError,
 } from '../errors';
 import { LinkupClient } from '../linkup-client';
 import type { ImageSearchResult, SearchParams, Source, TextSearchResult } from '../types';
 import { refineError } from '../utils/refine-error.utils';
+import type { X402Signer } from '../x402/types';
 
 jest.mock('axios');
+
+jest.mock('@x402/core/http', () => ({
+  decodePaymentRequiredHeader: jest.fn((header: string) => ({ decoded: header })),
+  encodePaymentSignatureHeader: jest.fn((_payload: unknown) => 'signed-payment'),
+}));
 const maxios = axios as jest.Mocked<typeof axios>;
 
 const mockAxiosInstance = {
@@ -25,6 +32,7 @@ const mockAxiosInstance = {
     },
   },
   post: jest.fn(),
+  request: jest.fn(),
   // biome-ignore lint/suspicious/noExplicitAny: testing purpose
 } as any;
 
@@ -424,6 +432,15 @@ describe('LinkupClient', () => {
         },
       },
       {
+        description: '402 PAYMENT_REQUIRED',
+        ErrorClass: LinkupPaymentRequiredError,
+        expectedMessage: 'Payment required',
+        input: {
+          error: { code: 'PAYMENT_REQUIRED', details: [], message: 'Payment required' },
+          statusCode: 402,
+        },
+      },
+      {
         description: '401',
         ErrorClass: LinkupAuthenticationError,
         expectedMessage: 'Unauthorized action',
@@ -497,6 +514,175 @@ describe('LinkupClient', () => {
       const error = await underTest.search({} as SearchParams).catch(e => e);
       expect(error).toBeInstanceOf(LinkupUnknownError);
       expect(error.message).toContain('An unknown error occurred');
+    });
+  });
+
+  describe('x402 mode', () => {
+    const mockSigner: X402Signer = {
+      createPaymentPayload: jest.fn().mockResolvedValue({ signed: true }),
+    };
+
+    const { decodePaymentRequiredHeader, encodePaymentSignatureHeader } =
+      // biome-ignore lint/suspicious/noExplicitAny: testing purpose
+      jest.requireMock('@x402/core/http') as any;
+
+    const createX402Client = () => {
+      maxios.create = jest.fn(() => mockAxiosInstance);
+      mockAxiosInstance.interceptors.response.use.mockClear();
+      mockAxiosInstance.request.mockClear();
+      (mockSigner.createPaymentPayload as jest.Mock).mockClear();
+      (decodePaymentRequiredHeader as jest.Mock).mockClear();
+      (encodePaymentSignatureHeader as jest.Mock).mockClear();
+      return new LinkupClient({ signer: mockSigner });
+    };
+
+    const getX402ErrorHandler = () => {
+      // The first call to interceptors.response.use is from setupX402Interceptor
+      return mockAxiosInstance.interceptors.response.use.mock.calls[0][1];
+    };
+
+    it('should not set Authorization header in x402 mode', () => {
+      createX402Client();
+
+      expect(maxios.create).toHaveBeenCalledWith({
+        baseURL: 'https://api.linkup.so/v1',
+        headers: {
+          'User-Agent': expect.stringContaining('Linkup-JS-SDK/'),
+        },
+      });
+    });
+
+    it('should register two response interceptors in x402 mode', () => {
+      createX402Client();
+
+      expect(mockAxiosInstance.interceptors.response.use).toHaveBeenCalledTimes(2);
+    });
+
+    it('should handle 402 → sign → retry → success', async () => {
+      createX402Client();
+      const x402ErrorHandler = getX402ErrorHandler();
+
+      const error402 = {
+        config: {
+          headers: { 'User-Agent': 'Linkup-JS-SDK/0.0.0' },
+          method: 'post',
+          url: '/search',
+        },
+        response: {
+          headers: { 'payment-required': 'encoded-payment-data' },
+          status: 402,
+        },
+      };
+
+      const successResponse = { data: { answer: 'ok' } };
+      mockAxiosInstance.request.mockResolvedValueOnce(successResponse);
+
+      const result = await x402ErrorHandler(error402);
+
+      expect(decodePaymentRequiredHeader).toHaveBeenCalledWith('encoded-payment-data');
+      expect(mockSigner.createPaymentPayload).toHaveBeenCalledWith({
+        decoded: 'encoded-payment-data',
+      });
+      expect(encodePaymentSignatureHeader).toHaveBeenCalledWith({ signed: true });
+      expect(mockAxiosInstance.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          _x402Retried: true,
+          headers: expect.objectContaining({
+            'payment-signature': 'signed-payment',
+          }),
+        }),
+      );
+      expect(result).toEqual(successResponse);
+    });
+
+    it('should reject with retry error when retried request fails', async () => {
+      createX402Client();
+      const x402ErrorHandler = getX402ErrorHandler();
+
+      const error402 = {
+        config: {
+          headers: {},
+          method: 'post',
+          url: '/search',
+        },
+        response: {
+          headers: { 'payment-required': 'encoded-payment-data' },
+          status: 402,
+        },
+      };
+
+      const retryError = new Error('retry failed');
+      mockAxiosInstance.request.mockRejectedValueOnce(retryError);
+
+      await expect(x402ErrorHandler(error402)).rejects.toBe(retryError);
+    });
+
+    it('should throw LinkupPaymentRequiredError when payment-required header is missing', async () => {
+      createX402Client();
+      const x402ErrorHandler = getX402ErrorHandler();
+
+      const error402NoHeader = {
+        config: {
+          headers: {},
+        },
+        response: {
+          headers: {},
+          status: 402,
+        },
+      };
+
+      await expect(x402ErrorHandler(error402NoHeader)).rejects.toBeInstanceOf(
+        LinkupPaymentRequiredError,
+      );
+      expect(decodePaymentRequiredHeader).not.toHaveBeenCalled();
+    });
+
+    it('should not retry when _x402Retried is already true', async () => {
+      createX402Client();
+      const x402ErrorHandler = getX402ErrorHandler();
+
+      const retriedError = {
+        config: {
+          _x402Retried: true,
+          headers: {},
+        },
+        response: {
+          headers: { 'payment-required': 'encoded-payment-data' },
+          status: 402,
+        },
+      };
+
+      await expect(x402ErrorHandler(retriedError)).rejects.toBe(retriedError);
+      expect(mockAxiosInstance.request).not.toHaveBeenCalled();
+    });
+
+    it('should pass through non-402 errors', async () => {
+      createX402Client();
+      const x402ErrorHandler = getX402ErrorHandler();
+
+      const error500 = {
+        config: {
+          headers: {},
+        },
+        response: {
+          status: 500,
+        },
+      };
+
+      await expect(x402ErrorHandler(error500)).rejects.toBe(error500);
+      expect(mockAxiosInstance.request).not.toHaveBeenCalled();
+      expect(decodePaymentRequiredHeader).not.toHaveBeenCalled();
+    });
+
+    it('should pass through errors without response (network error)', async () => {
+      createX402Client();
+      const x402ErrorHandler = getX402ErrorHandler();
+
+      const networkError = { code: 'ECONNREFUSED', message: 'connect ECONNREFUSED' };
+
+      await expect(x402ErrorHandler(networkError)).rejects.toBe(networkError);
+      expect(mockAxiosInstance.request).not.toHaveBeenCalled();
+      expect(decodePaymentRequiredHeader).not.toHaveBeenCalled();
     });
   });
 });

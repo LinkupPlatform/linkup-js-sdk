@@ -13,6 +13,6 @@
     "sourceMap": true,
     "resolveJsonModule": true
   },
-  "include": ["src"],
+  "include": ["src", "x402-core.d.ts"],
   "exclude": ["node_modules", "**/__tests__/*"]
 }

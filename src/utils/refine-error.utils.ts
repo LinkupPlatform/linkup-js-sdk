@@ -7,6 +7,7 @@ import {
   LinkupInsufficientCreditError,
   LinkupInvalidRequestError,
   LinkupNoResultError,
+  LinkupPaymentRequiredError,
   LinkupTooManyRequestsError,
   LinkupUnknownError,
 } from '../errors';
@@ -45,6 +46,8 @@ export const refineError = (e: LinkupApiError): LinkupError => {
         default:
           return new LinkupInvalidRequestError(concatErrorAndDetails(e));
       }
+    case 402:
+      return new LinkupPaymentRequiredError(message);
     case 401:
     case 403:
       return new LinkupAuthenticationError(message);

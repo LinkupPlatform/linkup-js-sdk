@@ -103,3 +103,48 @@ fetchLinkup()
   .then(console.log)
   .catch(console.error);
 ```
+
+### 💳 X402 Payment Protocol
+
+The SDK supports the [X402 payment protocol](https://www.x402.org/), allowing you to pay for API
+calls with on-chain transactions instead of an API key.
+
+#### Prerequisites
+
+Install the required peer dependencies:
+
+```bash
+npm i viem @x402/core @x402/evm
+```
+
+#### 📝 Example
+
+Create a viem `LocalAccount` compatible with Base (Ethereum):
+
+```typescript
+import { privateKeyToAccount } from 'viem/accounts';
+
+const account = privateKeyToAccount('<YOUR WALLET PRIVATE KEY>');
+```
+
+```typescript
+import { mnemonicToAccount } from 'viem/accounts';
+
+const account = mnemonicToAccount('<YOUR MNEMONIC PHRASE>');
+```
+
+Then pass it to `createX402Signer` and use the Linkup client:
+
+```typescript
+import { LinkupClient } from 'linkup-sdk';
+import { createX402Signer } from 'linkup-sdk/x402';
+
+const signer = createX402Signer(account);
+const client = new LinkupClient({ signer });
+
+const response = await client.search({
+  query: 'What is the X402 payment protocol?',
+  depth: 'standard',
+  outputType: 'sourcedAnswer',
+});
+```
