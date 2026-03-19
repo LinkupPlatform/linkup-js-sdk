@@ -14,10 +14,6 @@ jest.mock('viem', () => ({
   http: jest.fn(() => mockHttpTransport),
 }));
 
-jest.mock('viem/accounts', () => ({
-  privateKeyToAccount: jest.fn(() => mockAccount),
-}));
-
 jest.mock('viem/chains', () => ({
   base: { id: 8453, name: 'Base' },
 }));
@@ -32,11 +28,8 @@ jest.mock('@x402/core/client', () => ({
 }));
 
 import { ExactEvmScheme, toClientEvmSigner } from '@x402/evm';
-import { createPublicClient, http } from 'viem';
-import { privateKeyToAccount } from 'viem/accounts';
+import { createPublicClient, http, type LocalAccount } from 'viem';
 import { createX402Signer } from '../create-x402-signer';
-
-const PRIVATE_KEY = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
 
 describe('createX402Signer', () => {
   beforeEach(() => {
@@ -44,14 +37,8 @@ describe('createX402Signer', () => {
     mockClientInstance.register.mockReturnValue(mockClientInstance);
   });
 
-  it('should create an account from the private key', () => {
-    createX402Signer({ privateKey: PRIVATE_KEY });
-
-    expect(privateKeyToAccount).toHaveBeenCalledWith(PRIVATE_KEY);
-  });
-
   it('should create a public client with Base chain and http transport', () => {
-    createX402Signer({ privateKey: PRIVATE_KEY });
+    createX402Signer(mockAccount as unknown as LocalAccount);
 
     expect(http).toHaveBeenCalled();
     expect(createPublicClient).toHaveBeenCalledWith({
@@ -61,19 +48,19 @@ describe('createX402Signer', () => {
   });
 
   it('should create an EVM signer', () => {
-    createX402Signer({ privateKey: PRIVATE_KEY });
+    createX402Signer(mockAccount as unknown as LocalAccount);
 
     expect(toClientEvmSigner).toHaveBeenCalledWith(mockAccount, mockPublicClient);
   });
 
   it('should create an ExactEvmScheme', () => {
-    createX402Signer({ privateKey: PRIVATE_KEY });
+    createX402Signer(mockAccount as unknown as LocalAccount);
 
     expect(ExactEvmScheme).toHaveBeenCalledWith(mockEvmSigner);
   });
 
   it('should register with the correct chain ID', () => {
-    createX402Signer({ privateKey: PRIVATE_KEY });
+    createX402Signer(mockAccount as unknown as LocalAccount);
 
     expect(mockClientInstance.register).toHaveBeenCalledWith('eip155:8453', mockExactEvmScheme);
   });
@@ -82,7 +69,7 @@ describe('createX402Signer', () => {
     const mockPayload = { signed: true };
     mockClientInstance.createPaymentPayload.mockResolvedValueOnce(mockPayload);
 
-    const signer = createX402Signer({ privateKey: PRIVATE_KEY });
+    const signer = createX402Signer(mockAccount as unknown as LocalAccount);
     const result = await signer.createPaymentPayload({ amount: 100 });
 
     expect(mockClientInstance.createPaymentPayload).toHaveBeenCalledWith({ amount: 100 });
@@ -93,7 +80,7 @@ describe('createX402Signer', () => {
     const error = new Error('payment failed');
     mockClientInstance.createPaymentPayload.mockRejectedValueOnce(error);
 
-    const signer = createX402Signer({ privateKey: PRIVATE_KEY });
+    const signer = createX402Signer(mockAccount as unknown as LocalAccount);
 
     await expect(signer.createPaymentPayload({ amount: 100 })).rejects.toThrow('payment failed');
   });
