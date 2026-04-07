@@ -8,6 +8,7 @@ import {
   LinkupInvalidRequestError,
   LinkupNoResultError,
   LinkupPaymentRequiredError,
+  LinkupSearchResourceExhaustedError,
   LinkupTooManyRequestsError,
   LinkupUnknownError,
 } from '../errors';
@@ -57,6 +58,13 @@ export const refineError = (e: LinkupApiError): LinkupError => {
           return new LinkupInsufficientCreditError(message);
         case 'TOO_MANY_REQUESTS':
           return new LinkupTooManyRequestsError(message);
+        default:
+          return new LinkupUnknownError(`An unknown error occurred: ${error.message}`);
+      }
+    case 502:
+      switch (code) {
+        case 'SEARCH_RESOURCE_EXHAUSTED':
+          return new LinkupSearchResourceExhaustedError(message);
         default:
           return new LinkupUnknownError(`An unknown error occurred: ${error.message}`);
       }

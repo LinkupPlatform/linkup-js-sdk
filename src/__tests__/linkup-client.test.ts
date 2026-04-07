@@ -9,6 +9,7 @@ import {
   LinkupInvalidRequestError,
   LinkupNoResultError,
   LinkupPaymentRequiredError,
+  LinkupSearchResourceExhaustedError,
   LinkupTooManyRequestsError,
   LinkupUnknownError,
 } from '../errors';
@@ -487,6 +488,28 @@ describe('LinkupClient', () => {
         input: {
           error: { code: 'FOOBAR', details: [], message: 'foobar' },
           statusCode: 429,
+        },
+      },
+      {
+        description: '502 SEARCH_RESOURCE_EXHAUSTED',
+        ErrorClass: LinkupSearchResourceExhaustedError,
+        expectedMessage: 'Search resources exhausted',
+        input: {
+          error: {
+            code: 'SEARCH_RESOURCE_EXHAUSTED',
+            details: [],
+            message: 'Search resources exhausted',
+          },
+          statusCode: 502,
+        },
+      },
+      {
+        description: '502 unknown code',
+        ErrorClass: LinkupUnknownError,
+        expectedMessage: 'An unknown error occurred: Bad gateway',
+        input: {
+          error: { code: 'SOME_OTHER_CODE', details: [], message: 'Bad gateway' },
+          statusCode: 502,
         },
       },
       {

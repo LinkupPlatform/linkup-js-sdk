@@ -120,6 +120,20 @@ export class LinkupPaymentRequiredError extends LinkupError {
   }
 }
 
+// Search resource exhausted error, raised when the Linkup API returns a 502 status code.
+// It can be returned when the search engine performs too much computation at once, this can
+// typically be solved by simplifying the input query.
+export class LinkupSearchResourceExhaustedError extends LinkupError {
+  constructor(message?: string) {
+    super(message);
+    this.name = LinkupSearchResourceExhaustedError.name;
+
+    if ('captureStackTrace' in Error) {
+      Error.captureStackTrace(this, LinkupSearchResourceExhaustedError);
+    }
+  }
+}
+
 export class FetchUrlIsFileError extends LinkupError {
   constructor(message?: string) {
     super(message);
