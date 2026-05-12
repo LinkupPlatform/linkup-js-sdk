@@ -2,7 +2,7 @@
 import { ZodObject, ZodRawShape } from 'zod';
 import type { X402Signer } from './x402/types';
 
-export type SearchDepth = 'standard' | 'deep';
+export type SearchDepth = 'fast' | 'standard' | 'deep';
 
 export type ApiKeyConfig = { apiKey: string; baseUrl?: string };
 
