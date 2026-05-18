@@ -11,9 +11,12 @@ easy integration with Linkup's services.
 
 - ✅ **Simple and intuitive API client.**
 - 🔍 **Supports both standard and deep search queries.**
+- 🧠 **Supports asynchronous research tasks and batched task workflows.**
 - 🔒 **Handles authentication and request management.**
 
 ## 📦 Installation
+
+> **Requires Node.js >= 22**
 
 Simply install the Linkup JS SDK using `npm` or any other package manager:
 
@@ -38,7 +41,7 @@ Sign up on [Linkup](https://app.linkup.so) to get your API key.
 Pass the Linkup API key to the Linkup Client when creating it.
 
 ```typescript
-import { LinkupClient } from 'linkup-js-sdk';
+import { LinkupClient } from 'linkup-sdk';
 
 const client = new LinkupClient({
   apiKey: '<YOUR API KEY>',
@@ -58,7 +61,7 @@ All search queries can be used with two very different modes:
 #### 📝 Example standard search query
 
 ```typescript
-import { LinkupClient } from 'linkup-js-sdk';
+import { LinkupClient } from 'linkup-sdk';
 
 const client = new LinkupClient({
   apiKey: '<YOUR API KEY>',
@@ -71,7 +74,7 @@ const askLinkup = () => client.search({
 });
 
 askLinkup()
-  .then(console.log);
+  .then(console.log)
   .catch(console.error);
 ```
 
@@ -88,7 +91,7 @@ Use `extractImages` to get an extracted list of images from the page.
 #### 📝 Example
 
 ```typescript
-import { LinkupClient } from 'linkup-js-sdk';
+import { LinkupClient } from 'linkup-sdk';
 
 const client = new LinkupClient({
   apiKey: '<YOUR API KEY>',
@@ -102,6 +105,57 @@ const fetchLinkup = async () => client.fetch({
 fetchLinkup()
   .then(console.log)
   .catch(console.error);
+```
+
+### 🧠 Research Endpoint
+
+Use `research` to create an asynchronous research task, then poll it later or list recent runs.
+
+```typescript
+import { LinkupClient } from 'linkup-sdk';
+
+const client = new LinkupClient({
+  apiKey: '<YOUR API KEY>',
+});
+
+const task = await client.research({
+  query: 'Research the current state of the semiconductor market, covering key market dynamics, major industry players and their strategic positioning, recent analyst sentiment, and the main bull and bear cases for the sector. Ground the report in sourced, factual information.',
+  outputType: 'sourcedAnswer',
+});
+
+const latest = await client.getResearch(task.id);
+```
+
+### 🗂️ Tasks Endpoint
+
+Use `createTasks` to submit mixed `search`, `fetch`, and `research` jobs in one batch, then inspect
+them through `listTasks` or `getTask`.
+
+```typescript
+import { LinkupClient } from 'linkup-sdk';
+
+const client = new LinkupClient({
+  apiKey: '<YOUR API KEY>',
+});
+
+const tasks = await client.createTasks([
+  {
+    type: 'search',
+    input: {
+      query: 'Linkup latest product updates',
+      depth: 'deep',
+      outputType: 'sourcedAnswer',
+    },
+  },
+  {
+    type: 'fetch',
+    input: {
+      url: 'https://docs.linkup.so',
+    },
+  },
+]);
+
+console.log(tasks.map(task => task.id));
 ```
 
 ### 💳 X402 Payment Protocol
