@@ -29,9 +29,9 @@ When adding or changing a public API capability, update the relevant pieces toge
 ## Validation
 
 Before opening a PR, run the narrowest relevant checks:
-- `npm test`
-- `npm run lint`
 - `npm run build`
+- `npm run lint`
+- `npm test`
 
 ## Non-Goals
 
