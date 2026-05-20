@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.0.5/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.4.4/schema.json",
   "assist": {
     "actions": {
       "source": {
@@ -40,9 +40,7 @@
     "enabled": true,
     "rules": {
       "correctness": {
-        "noUnusedImports": {
-          "level": "warn"
-        }
+        "noUnusedImports": "error"
       },
       "nursery": {
         "noFloatingPromises": "error"
@@ -65,7 +63,7 @@
   },
   "vcs": {
     "clientKind": "git",
-    "enabled": false,
-    "useIgnoreFile": false
+    "enabled": true,
+    "useIgnoreFile": true
   }
 }

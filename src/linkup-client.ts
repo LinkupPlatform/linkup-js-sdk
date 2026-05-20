@@ -8,11 +8,23 @@ import {
   FetchParams,
   LinkupFetchResponse,
   LinkupSearchResponse,
+  ListResearchParams,
+  ListTasksParams,
+  PaginatedResearchTasks,
+  PaginatedTasks,
+  ResearchParams,
+  ResearchTask,
   SearchParams,
+  Task,
+  TaskRequest,
 } from './types';
 import { refineError } from './utils/refine-error.utils';
 import { isZodObject } from './utils/schema.utils';
 import type { X402Signer } from './x402/types';
+
+type SanitizedParams = Record<string, string | boolean | string[] | number>;
+type QueryParamValue = string | number | boolean;
+type QueryParams = Record<string, QueryParamValue | QueryParamValue[] | undefined>;
 
 export class LinkupClient {
   private readonly USER_AGENT = `Linkup-JS-SDK/${version}`;
@@ -43,11 +55,52 @@ export class LinkupClient {
   }
 
   async search<T extends SearchParams>(params: T): Promise<LinkupSearchResponse<T>> {
-    return this.client.post('/search', this.sanitizeParams(params)).then(response => response.data);
+    return this.client
+      .post('/search', this.sanitizeSearchParams(params))
+      .then(response => response.data);
   }
 
   async fetch<T extends FetchParams>(params: T): Promise<LinkupFetchResponse<T>> {
     return this.client.post('/fetch', params).then(response => response.data);
+  }
+
+  async research(params: ResearchParams): Promise<ResearchTask> {
+    return this.client
+      .post('/research', this.sanitizeResearchParams(params))
+      .then(response => this.normalizeResearchTask(response.data));
+  }
+
+  async listResearch(params: ListResearchParams = {}): Promise<PaginatedResearchTasks> {
+    return this.client.get('/research', this.buildRequestConfig(params)).then(response => ({
+      ...response.data,
+      data: response.data.data.map((task: unknown) => this.normalizeResearchTask(task)),
+    }));
+  }
+
+  async getResearch(id: string): Promise<ResearchTask> {
+    return this.client
+      .get(`/research/${id}`)
+      .then(response => this.normalizeResearchTask(response.data));
+  }
+
+  async createTasks(tasks: TaskRequest[]): Promise<Task[]> {
+    return this.client
+      .post(
+        '/tasks',
+        tasks.map(task => this.sanitizeTaskRequest(task)),
+      )
+      .then(response => response.data.map((task: unknown) => this.normalizeTask(task)));
+  }
+
+  async listTasks(params: ListTasksParams = {}): Promise<PaginatedTasks> {
+    return this.client.get('/tasks', this.buildRequestConfig(params)).then(response => ({
+      ...response.data,
+      data: response.data.data.map((task: unknown) => this.normalizeTask(task)),
+    }));
+  }
+
+  async getTask(id: string): Promise<Task> {
+    return this.client.get(`/tasks/${id}`).then(response => this.normalizeTask(response.data));
   }
 
   private setupX402Interceptor(signer: X402Signer): void {
@@ -91,9 +144,7 @@ export class LinkupClient {
     );
   }
 
-  private sanitizeParams<T extends SearchParams>(
-    params: T,
-  ): Record<string, string | boolean | string[] | number> {
+  private sanitizeSearchParams<T extends SearchParams>(params: T): SanitizedParams {
     const {
       query,
       depth,
@@ -106,7 +157,7 @@ export class LinkupClient {
       maxResults,
     } = params;
 
-    const result: Record<string, string | boolean | string[] | number> = {
+    const result: SanitizedParams = {
       depth,
       outputType,
       q: query,
@@ -127,13 +178,129 @@ export class LinkupClient {
     }
 
     if ('structuredOutputSchema' in params) {
-      result.structuredOutputSchema = JSON.stringify(
-        isZodObject(params.structuredOutputSchema)
-          ? zodToJsonSchema(params.structuredOutputSchema as ZodObject<ZodRawShape>)
-          : params.structuredOutputSchema,
+      result.structuredOutputSchema = this.serializeStructuredOutputSchema(
+        params.structuredOutputSchema,
       );
     }
 
     return result;
+  }
+
+  private sanitizeResearchParams(params: ResearchParams): SanitizedParams {
+    const {
+      query,
+      outputType,
+      includeDomains,
+      excludeDomains,
+      fromDate,
+      toDate,
+      mode,
+      reasoningDepth,
+    } = params;
+
+    const result: SanitizedParams = {
+      outputType,
+      q: query,
+      ...(includeDomains && { includeDomains }),
+      ...(excludeDomains && { excludeDomains }),
+      ...(fromDate && { fromDate: fromDate.toISOString() }),
+      ...(toDate && { toDate: toDate.toISOString() }),
+      ...(mode && { mode }),
+      ...(reasoningDepth && { reasoningDepth }),
+    };
+
+    if ('structuredOutputSchema' in params) {
+      result.structuredOutputSchema = this.serializeStructuredOutputSchema(
+        params.structuredOutputSchema,
+      );
+    }
+
+    return result;
+  }
+
+  private serializeStructuredOutputSchema(schema: unknown): string {
+    return JSON.stringify(
+      isZodObject(schema) ? zodToJsonSchema(schema as ZodObject<ZodRawShape>) : schema,
+    );
+  }
+
+  private sanitizeTaskRequest(task: TaskRequest): {
+    input: SanitizedParams | FetchParams;
+    type: string;
+  } {
+    switch (task.type) {
+      case 'search':
+        return {
+          input: this.sanitizeSearchParams(task.input),
+          type: task.type,
+        };
+      case 'fetch':
+        return task;
+      case 'research':
+        return {
+          input: this.sanitizeResearchParams(task.input),
+          type: task.type,
+        };
+    }
+  }
+
+  private buildRequestConfig(params: QueryParams) {
+    return {
+      params,
+      paramsSerializer: (rawParams: QueryParams) => this.serializeQueryParams(rawParams),
+    };
+  }
+
+  private serializeQueryParams(params: QueryParams): string {
+    const queryParams = new URLSearchParams();
+
+    for (const [key, value] of Object.entries(params)) {
+      if (value === undefined) {
+        continue;
+      }
+
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          queryParams.append(key, String(item));
+        }
+        continue;
+      }
+
+      queryParams.append(key, String(value));
+    }
+
+    return queryParams.toString();
+  }
+
+  private normalizeResearchTask(task: unknown): ResearchTask {
+    return this.normalizeTask(task) as ResearchTask;
+  }
+
+  private normalizeTask(task: unknown): Task {
+    const normalizedTask = task as Task & { input: Record<string, unknown> };
+
+    switch (normalizedTask.type) {
+      case 'search':
+        return {
+          ...normalizedTask,
+          input: this.normalizeSearchLikeInput(normalizedTask.input),
+        } as Task;
+      case 'fetch':
+        return normalizedTask;
+      case 'research':
+        return {
+          ...normalizedTask,
+          input: this.normalizeSearchLikeInput(normalizedTask.input),
+        } as Task;
+    }
+  }
+
+  private normalizeSearchLikeInput(input: Record<string, unknown>) {
+    const { q, ...rest } = input;
+
+    return {
+      ...rest,
+      query: q,
+    };
   }
 }

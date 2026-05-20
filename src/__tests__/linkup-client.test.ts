@@ -26,6 +26,7 @@ jest.mock('@x402/core/http', () => ({
 const maxios = axios as jest.Mocked<typeof axios>;
 
 const mockAxiosInstance = {
+  get: jest.fn(),
   interceptors: {
     response: {
       use: jest.fn(),
@@ -43,186 +44,210 @@ describe('LinkupClient', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockAxiosInstance.get.mockClear();
     mockAxiosInstance.post.mockClear();
   });
 
-  it('should make a successful API call with correct parameters', async () => {
-    mockAxiosInstance.post.mockResolvedValueOnce({
-      data: { answer: '' },
-    } as AxiosResponse);
+  describe('search method', () => {
+    it('should make a successful API call with correct parameters', async () => {
+      mockAxiosInstance.post.mockResolvedValueOnce({
+        data: { answer: '' },
+      } as AxiosResponse);
 
-    await underTest.search({
-      depth: 'deep',
-      outputType: 'sourcedAnswer',
-      query: 'foo',
+      await underTest.search({
+        depth: 'deep',
+        outputType: 'sourcedAnswer',
+        query: 'foo',
+      });
+
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/search', {
+        depth: 'deep',
+        outputType: 'sourcedAnswer',
+        q: 'foo',
+      });
     });
 
-    expect(mockAxiosInstance.post).toHaveBeenCalledWith('/search', {
-      depth: 'deep',
-      outputType: 'sourcedAnswer',
-      q: 'foo',
+    it('should include all valid parameters when provided', async () => {
+      mockAxiosInstance.post.mockResolvedValueOnce({
+        data: { answer: '' },
+      } as AxiosResponse);
+      const fromDate = new Date('2025-01-01');
+      const toDate = new Date('2025-01-02');
+
+      await underTest.search({
+        depth: 'deep',
+        excludeDomains: ['baz.com', 'qux.com'],
+        fromDate,
+        includeDomains: ['foo.com', 'bar.com'],
+        includeImages: true,
+        includeInlineCitations: true,
+        maxResults: 10,
+        outputType: 'sourcedAnswer',
+        query: 'foo',
+        toDate,
+        wrongParameter: 'wrong',
+      });
+
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/search', {
+        depth: 'deep',
+        excludeDomains: ['baz.com', 'qux.com'],
+        fromDate: fromDate.toISOString(),
+        includeDomains: ['foo.com', 'bar.com'],
+        includeImages: true,
+        includeInlineCitations: true,
+        maxResults: 10,
+        outputType: 'sourcedAnswer',
+        q: 'foo',
+        toDate: toDate.toISOString(),
+      });
     });
-  });
 
-  it('should include all valid parameters when provided', async () => {
-    mockAxiosInstance.post.mockResolvedValueOnce({
-      data: { answer: '' },
-    } as AxiosResponse);
-    const fromDate = new Date('2025-01-01');
-    const toDate = new Date('2025-01-02');
-
-    await underTest.search({
-      depth: 'deep',
-      excludeDomains: ['baz.com', 'qux.com'],
-      fromDate,
-      includeDomains: ['foo.com', 'bar.com'],
-      includeImages: true,
-      includeInlineCitations: true,
-      maxResults: 10,
-      outputType: 'sourcedAnswer',
-      query: 'foo',
-      toDate,
-      wrongParameter: 'wrong',
-    });
-
-    expect(mockAxiosInstance.post).toHaveBeenCalledWith('/search', {
-      depth: 'deep',
-      excludeDomains: ['baz.com', 'qux.com'],
-      fromDate: fromDate.toISOString(),
-      includeDomains: ['foo.com', 'bar.com'],
-      includeImages: true,
-      includeInlineCitations: true,
-      maxResults: 10,
-      outputType: 'sourcedAnswer',
-      q: 'foo',
-      toDate: toDate.toISOString(),
-    });
-  });
-
-  it('should use custom base URL if provided', async () => {
-    const customMockInstance = {
-      interceptors: {
-        response: {
-          use: jest.fn(),
+    it('should use custom base URL if provided', async () => {
+      const customMockInstance = {
+        interceptors: {
+          response: {
+            use: jest.fn(),
+          },
         },
-      },
-      post: jest.fn(),
-      // biome-ignore lint/suspicious/noExplicitAny: testing purpose
-    } as any;
+        post: jest.fn(),
+        // biome-ignore lint/suspicious/noExplicitAny: testing purpose
+      } as any;
 
-    maxios.create = jest.fn(() => customMockInstance);
+      maxios.create = jest.fn(() => customMockInstance);
 
-    const client = new LinkupClient({
-      apiKey: '1234',
-      baseUrl: 'http://foo.bar/baz',
+      const client = new LinkupClient({
+        apiKey: '1234',
+        baseUrl: 'http://foo.bar/baz',
+      });
+
+      customMockInstance.post.mockResolvedValueOnce({
+        data: { answer: '' },
+      } as AxiosResponse);
+
+      await client.search({
+        depth: 'deep',
+        outputType: 'sourcedAnswer',
+        query: 'foo',
+      });
+
+      expect(maxios.create).toHaveBeenCalledWith({
+        baseURL: 'http://foo.bar/baz',
+        headers: {
+          Authorization: 'Bearer 1234',
+          'User-Agent': 'Linkup-JS-SDK/0.0.0',
+        },
+      });
     });
 
-    customMockInstance.post.mockResolvedValueOnce({
-      data: { answer: '' },
-    } as AxiosResponse);
+    it('should handle sourcedAnswer output type', async () => {
+      mockAxiosInstance.post.mockResolvedValueOnce({
+        data: {
+          answer: 'foo',
+          sources: [
+            {
+              favicon: 'http://foo.bar/favicon.ico',
+              name: 'foo',
+              snippet: 'foo bar baz',
+              url: 'http://foo.bar/baz',
+            },
+            {
+              content: 'foo bar baz',
+              favicon: 'http://foo.bar/favicon.ico',
+              name: 'bar',
+              type: 'text',
+              url: 'http://foo.bar/baz',
+            },
+            {
+              name: 'baz',
+              type: 'image',
+              url: 'http://foo.bar/baz',
+            },
+          ],
+        },
+      } as AxiosResponse);
 
-    await client.search({
-      depth: 'deep',
-      outputType: 'sourcedAnswer',
-      query: 'foo',
+      const result = await underTest.search({
+        depth: 'standard',
+        outputType: 'sourcedAnswer',
+        query: 'foo',
+      });
+
+      expect(result.answer).toEqual('foo');
+      expect((result.sources.at(0) as Source)?.name).toEqual('foo');
+      expect((result.sources.at(0) as Source)?.url).toEqual('http://foo.bar/baz');
+      expect((result.sources.at(0) as Source)?.snippet).toEqual('foo bar baz');
+      expect((result.sources.at(0) as Source)?.favicon).toEqual('http://foo.bar/favicon.ico');
+      expect((result.sources.at(1) as TextSearchResult)?.type).toEqual('text');
+      expect((result.sources.at(1) as TextSearchResult)?.name).toEqual('bar');
+      expect((result.sources.at(1) as TextSearchResult)?.url).toEqual('http://foo.bar/baz');
+      expect((result.sources.at(1) as TextSearchResult)?.content).toEqual('foo bar baz');
+      expect((result.sources.at(1) as TextSearchResult)?.favicon).toEqual(
+        'http://foo.bar/favicon.ico',
+      );
+      expect((result.sources.at(2) as ImageSearchResult)?.type).toEqual('image');
+      expect((result.sources.at(2) as ImageSearchResult)?.name).toEqual('baz');
+      expect((result.sources.at(2) as ImageSearchResult)?.url).toEqual('http://foo.bar/baz');
     });
 
-    expect(maxios.create).toHaveBeenCalledWith({
-      baseURL: 'http://foo.bar/baz',
-      headers: {
-        Authorization: 'Bearer 1234',
-        'User-Agent': 'Linkup-JS-SDK/0.0.0',
-      },
-    });
-  });
+    it('should handle searchResults output type', async () => {
+      mockAxiosInstance.post.mockResolvedValueOnce({
+        data: { results: [] },
+      } as AxiosResponse);
 
-  it('should handle sourcedAnswer output type', async () => {
-    mockAxiosInstance.post.mockResolvedValueOnce({
-      data: {
-        answer: 'foo',
-        sources: [
-          {
-            favicon: 'http://foo.bar/favicon.ico',
-            name: 'foo',
-            snippet: 'foo bar baz',
-            url: 'http://foo.bar/baz',
-          },
-          {
-            content: 'foo bar baz',
-            favicon: 'http://foo.bar/favicon.ico',
-            name: 'bar',
-            type: 'text',
-            url: 'http://foo.bar/baz',
-          },
-          {
-            name: 'baz',
-            type: 'image',
-            url: 'http://foo.bar/baz',
-          },
-        ],
-      },
-    } as AxiosResponse);
+      const result = await underTest.search({
+        depth: 'standard',
+        outputType: 'searchResults',
+        query: 'foo',
+      });
 
-    const result = await underTest.search({
-      depth: 'standard',
-      outputType: 'sourcedAnswer',
-      query: 'foo',
+      expect(result).toHaveProperty('results');
     });
 
-    expect(result.answer).toEqual('foo');
-    expect((result.sources.at(0) as Source)?.name).toEqual('foo');
-    expect((result.sources.at(0) as Source)?.url).toEqual('http://foo.bar/baz');
-    expect((result.sources.at(0) as Source)?.snippet).toEqual('foo bar baz');
-    expect((result.sources.at(0) as Source)?.favicon).toEqual('http://foo.bar/favicon.ico');
-    expect((result.sources.at(1) as TextSearchResult)?.type).toEqual('text');
-    expect((result.sources.at(1) as TextSearchResult)?.name).toEqual('bar');
-    expect((result.sources.at(1) as TextSearchResult)?.url).toEqual('http://foo.bar/baz');
-    expect((result.sources.at(1) as TextSearchResult)?.content).toEqual('foo bar baz');
-    expect((result.sources.at(1) as TextSearchResult)?.favicon).toEqual(
-      'http://foo.bar/favicon.ico',
-    );
-    expect((result.sources.at(2) as ImageSearchResult)?.type).toEqual('image');
-    expect((result.sources.at(2) as ImageSearchResult)?.name).toEqual('baz');
-    expect((result.sources.at(2) as ImageSearchResult)?.url).toEqual('http://foo.bar/baz');
-  });
-
-  it('should handle searchResults output type', async () => {
-    mockAxiosInstance.post.mockResolvedValueOnce({
-      data: { results: [] },
-    } as AxiosResponse);
-
-    const result = await underTest.search({
-      depth: 'standard',
-      outputType: 'searchResults',
-      query: 'foo',
-    });
-
-    expect(result).toHaveProperty('results');
-  });
-
-  it('should handle structured output type using JSON schema', async () => {
-    mockAxiosInstance.post.mockResolvedValueOnce({
-      data: {
-        type: 'foo',
-      },
-    } as AxiosResponse);
-
-    const result = await underTest.search({
-      depth: 'standard',
-      outputType: 'structured',
-      query: 'foo',
-      structuredOutputSchema: { type: 'string' },
-    });
-
-    expect(result).toEqual({ type: 'foo' });
-  });
-
-  it('should handle structured output type using JSON schema with includeSources', async () => {
-    mockAxiosInstance.post.mockResolvedValueOnce({
-      data: {
+    it('should handle structured output type using JSON schema', async () => {
+      mockAxiosInstance.post.mockResolvedValueOnce({
         data: {
           type: 'foo',
         },
+      } as AxiosResponse);
+
+      const result = await underTest.search({
+        depth: 'standard',
+        outputType: 'structured',
+        query: 'foo',
+        structuredOutputSchema: { type: 'string' },
+      });
+
+      expect(result).toEqual({ type: 'foo' });
+    });
+
+    it('should handle structured output type using JSON schema with includeSources', async () => {
+      mockAxiosInstance.post.mockResolvedValueOnce({
+        data: {
+          data: {
+            type: 'foo',
+          },
+          sources: [
+            {
+              content: 'Lorem ipsum dolor sit amet',
+              favicon: 'http://foo.bar/favicon.ico',
+              name: 'foo',
+              type: 'text',
+              url: 'http://foo.bar/baz',
+            },
+          ],
+        },
+      } as AxiosResponse);
+
+      const result = await underTest.search({
+        depth: 'standard',
+        includeSources: true,
+        outputType: 'structured',
+        query: 'foo',
+        structuredOutputSchema: { type: 'string' },
+      });
+
+      expect(result).toEqual({
+        data: { type: 'foo' },
         sources: [
           {
             content: 'Lorem ipsum dolor sit amet',
@@ -232,50 +257,29 @@ describe('LinkupClient', () => {
             url: 'http://foo.bar/baz',
           },
         ],
-      },
-    } as AxiosResponse);
-
-    const result = await underTest.search({
-      depth: 'standard',
-      includeSources: true,
-      outputType: 'structured',
-      query: 'foo',
-      structuredOutputSchema: { type: 'string' },
+      });
     });
 
-    expect(result).toEqual({
-      data: { type: 'foo' },
-      sources: [
-        {
-          content: 'Lorem ipsum dolor sit amet',
-          favicon: 'http://foo.bar/favicon.ico',
-          name: 'foo',
-          type: 'text',
-          url: 'http://foo.bar/baz',
-        },
-      ],
+    it('should handle structured output type using Zod schema', async () => {
+      mockAxiosInstance.post.mockResolvedValueOnce({
+        data: 'foo',
+      } as AxiosResponse);
+
+      await underTest.search({
+        depth: 'standard',
+        outputType: 'structured',
+        query: 'foo',
+        structuredOutputSchema: z.object({ foo: z.string() }),
+      });
+
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          q: 'foo',
+          structuredOutputSchema: expect.stringContaining('"foo":{"type":"string"}'),
+        }),
+      );
     });
-  });
-
-  it('should handle structured output type using Zod schema', async () => {
-    mockAxiosInstance.post.mockResolvedValueOnce({
-      data: 'foo',
-    } as AxiosResponse);
-
-    await underTest.search({
-      depth: 'standard',
-      outputType: 'structured',
-      query: 'foo',
-      structuredOutputSchema: z.object({ foo: z.string() }),
-    });
-
-    expect(mockAxiosInstance.post).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        q: 'foo',
-        structuredOutputSchema: expect.stringContaining('"foo":{"type":"string"}'),
-      }),
-    );
   });
 
   describe('fetch method', () => {
@@ -358,6 +362,274 @@ describe('LinkupClient', () => {
         ],
         markdown: 'Fetched content',
       });
+    });
+  });
+
+  describe('research methods', () => {
+    it('should create a research task and normalize the returned input', async () => {
+      mockAxiosInstance.post.mockResolvedValueOnce({
+        data: {
+          createdAt: '2026-05-18T00:00:00.000Z',
+          error: null,
+          id: '2dbcc4bb-2c0d-4bcb-aaf5-44f7cbcf4eee',
+          input: {
+            mode: 'Auto',
+            outputType: 'sourcedAnswer',
+            q: 'What changed?',
+            reasoningDepth: 'L',
+          },
+          output: null,
+          status: 'pending',
+          type: 'research',
+          updatedAt: '2026-05-18T00:00:00.000Z',
+        },
+      } as AxiosResponse);
+
+      const result = await underTest.research({
+        outputType: 'sourcedAnswer',
+        query: 'What changed?',
+      });
+
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/research', {
+        outputType: 'sourcedAnswer',
+        q: 'What changed?',
+      });
+      expect(result.input).toEqual({
+        mode: 'Auto',
+        outputType: 'sourcedAnswer',
+        query: 'What changed?',
+        reasoningDepth: 'L',
+      });
+    });
+
+    it('should get a single research task by id', async () => {
+      mockAxiosInstance.get.mockResolvedValueOnce({
+        data: {
+          createdAt: '2026-05-18T00:00:00.000Z',
+          error: null,
+          id: 'abc-123',
+          input: {
+            mode: 'Auto',
+            outputType: 'sourcedAnswer',
+            q: 'deep question',
+            reasoningDepth: 'XL',
+          },
+          output: { answer: 'result', sources: [] },
+          status: 'completed',
+          type: 'research',
+          updatedAt: '2026-05-18T01:00:00.000Z',
+        },
+      } as AxiosResponse);
+
+      const result = await underTest.getResearch('abc-123');
+
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith('/research/abc-123');
+      expect(result.input.query).toBe('deep question');
+      expect(result.output).toEqual({ answer: 'result', sources: [] });
+    });
+
+    it('should list research tasks with pagination', async () => {
+      mockAxiosInstance.get.mockResolvedValueOnce({
+        data: {
+          data: [
+            {
+              createdAt: '2026-05-18T00:00:00.000Z',
+              error: null,
+              id: 'r-1',
+              input: { outputType: 'sourcedAnswer', q: 'first' },
+              output: null,
+              status: 'pending',
+              type: 'research',
+              updatedAt: '2026-05-18T00:00:00.000Z',
+            },
+          ],
+          metadata: { page: 1, pageSize: 10, total: 1, totalPages: 1 },
+        },
+      } as AxiosResponse);
+
+      const result = await underTest.listResearch({ page: 1, pageSize: 10 });
+
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+        '/research',
+        expect.objectContaining({ params: { page: 1, pageSize: 10 } }),
+      );
+      expect(result.data[0].input.query).toBe('first');
+      expect(result.metadata.total).toBe(1);
+    });
+  });
+
+  describe('tasks methods', () => {
+    it('should create tasks', async () => {
+      mockAxiosInstance.post.mockResolvedValueOnce({
+        data: [
+          {
+            createdAt: '2026-05-18T00:00:00.000Z',
+            error: null,
+            id: '0fd818f5-5b88-4841-8159-c212ef8e3c34',
+            input: {
+              depth: 'deep',
+              outputType: 'sourcedAnswer',
+              q: 'foo',
+            },
+            output: null,
+            status: 'pending',
+            type: 'search',
+            updatedAt: '2026-05-18T00:00:00.000Z',
+          },
+          {
+            createdAt: '2026-05-18T00:00:00.000Z',
+            error: null,
+            id: 'c4ea3d1d-764d-4b88-95d0-5328596c4efa',
+            input: {
+              url: 'https://example.com',
+            },
+            output: null,
+            status: 'pending',
+            type: 'fetch',
+            updatedAt: '2026-05-18T00:00:00.000Z',
+          },
+        ],
+      } as AxiosResponse);
+
+      const result = await underTest.createTasks([
+        {
+          input: {
+            depth: 'deep',
+            outputType: 'sourcedAnswer',
+            query: 'foo',
+          },
+          type: 'search',
+        },
+        {
+          input: {
+            url: 'https://example.com',
+          },
+          type: 'fetch',
+        },
+      ]);
+
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/tasks', [
+        {
+          input: {
+            depth: 'deep',
+            outputType: 'sourcedAnswer',
+            q: 'foo',
+          },
+          type: 'search',
+        },
+        {
+          input: {
+            url: 'https://example.com',
+          },
+          type: 'fetch',
+        },
+      ]);
+      expect(result[0]).toMatchObject({
+        input: {
+          depth: 'deep',
+          outputType: 'sourcedAnswer',
+          query: 'foo',
+        },
+        type: 'search',
+      });
+      expect(result[1]).toMatchObject({
+        input: {
+          url: 'https://example.com',
+        },
+        type: 'fetch',
+      });
+    });
+
+    it('should get a single task by id', async () => {
+      mockAxiosInstance.get.mockResolvedValueOnce({
+        data: {
+          createdAt: '2026-05-18T00:00:00.000Z',
+          error: null,
+          id: 'task-456',
+          input: { depth: 'deep', outputType: 'sourcedAnswer', q: 'hello' },
+          output: { answer: 'world', sources: [] },
+          status: 'completed',
+          type: 'search',
+          updatedAt: '2026-05-18T01:00:00.000Z',
+        },
+      } as AxiosResponse);
+
+      const result = await underTest.getTask('task-456');
+
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith('/tasks/task-456');
+      expect(result.type).toBe('search');
+      if (result.type === 'search') {
+        expect(result.input.query).toBe('hello');
+      }
+    });
+
+    it('should list tasks with filters and pagination', async () => {
+      mockAxiosInstance.get.mockResolvedValueOnce({
+        data: {
+          data: [
+            {
+              createdAt: '2026-05-18T00:00:00.000Z',
+              error: null,
+              id: 't-1',
+              input: { url: 'https://example.com' },
+              output: null,
+              status: 'pending',
+              type: 'fetch',
+              updatedAt: '2026-05-18T00:00:00.000Z',
+            },
+          ],
+          metadata: { page: 1, pageSize: 5, total: 1, totalPages: 1 },
+          quota: { inFlight: 1, limit: 100 },
+        },
+      } as AxiosResponse);
+
+      const result = await underTest.listTasks({ page: 1, pageSize: 5, status: 'pending' });
+
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+        '/tasks',
+        expect.objectContaining({ params: { page: 1, pageSize: 5, status: 'pending' } }),
+      );
+      expect(result.data[0].type).toBe('fetch');
+      expect(result.quota.inFlight).toBe(1);
+    });
+
+    it('should serialize repeated list task filters without array brackets', async () => {
+      mockAxiosInstance.get.mockResolvedValueOnce({
+        data: {
+          data: [],
+          metadata: {
+            page: 1,
+            pageSize: 10,
+            total: 0,
+            totalPages: 0,
+          },
+          quota: {
+            inFlight: 0,
+            limit: 100,
+          },
+        },
+      } as AxiosResponse);
+
+      await underTest.listTasks({
+        status: ['pending', 'processing'],
+        type: ['search', 'research'],
+      });
+
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+        '/tasks',
+        expect.objectContaining({
+          params: {
+            status: ['pending', 'processing'],
+            type: ['search', 'research'],
+          },
+          paramsSerializer: expect.any(Function),
+        }),
+      );
+
+      const config = mockAxiosInstance.get.mock.calls[0][1];
+      expect(config.paramsSerializer(config.params)).toBe(
+        'status=pending&status=processing&type=search&type=research',
+      );
     });
   });
 
@@ -498,15 +770,16 @@ describe('LinkupClient', () => {
           statusCode: 500,
         },
       },
-    ])(
-      'should throw the correct error on $description',
-      async ({ input, ErrorClass, expectedMessage }) => {
-        mockAxiosInstance.post.mockRejectedValueOnce(refineError(input));
-        const error = await underTest.search({} as SearchParams).catch(e => e);
-        expect(error).toBeInstanceOf(ErrorClass);
-        expect(error.message).toEqual(expectedMessage);
-      },
-    );
+    ])('should throw the correct error on $description', async ({
+      input,
+      ErrorClass,
+      expectedMessage,
+    }) => {
+      mockAxiosInstance.post.mockRejectedValueOnce(refineError(input));
+      const error = await underTest.search({} as SearchParams).catch(e => e);
+      expect(error).toBeInstanceOf(ErrorClass);
+      expect(error.message).toEqual(expectedMessage);
+    });
 
     it('should handle malformed error responses without error property', async () => {
       // biome-ignore lint/suspicious/noExplicitAny: testing malformed response
