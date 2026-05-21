@@ -2,7 +2,7 @@
 import { ZodObject, ZodRawShape } from 'zod';
 import type { X402Signer } from './x402/types';
 
-export type SearchDepth = 'standard' | 'deep';
+export type SearchDepth = 'standard' | 'deep' | 'fast';
 export type ResearchMode = 'answer' | 'auto' | 'investigate' | 'research';
 export type ResearchReasoningDepth = 'S' | 'M' | 'L' | 'XL';
 export type TaskStatus = 'pending' | 'processing' | 'completed' | 'failed';
