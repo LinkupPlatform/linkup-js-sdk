@@ -30,13 +30,7 @@ export type StructuredWithSources = {
   sources: StructuredSource[];
 };
 
-export type StructuredSource = {
-  url: string;
-  content: string;
-  name: string;
-  type: string;
-  favicon: string;
-};
+export type StructuredSource = TextSearchResult | ImageSearchResult;
 
 type BaseSearchRequestParams = {
   query: string;
@@ -93,7 +87,7 @@ export type ImageSearchResult = {
 
 export type SourcedAnswer = {
   answer: string;
-  sources: (Source | TextSearchResult | ImageSearchResult)[];
+  sources: Source[];
 };
 
 export type Source = {

@@ -1,10 +1,10 @@
 import axios, { type AxiosResponse } from 'axios';
 import { z } from 'zod';
 import {
-  FetchUrlIsFileError,
   LinkupAuthenticationError,
   LinkupFetchError,
   LinkupFetchResponseTooLargeError,
+  LinkupFetchUnsupportedContentTypeError,
   LinkupInsufficientCreditError,
   LinkupInvalidRequestError,
   LinkupNoResultError,
@@ -13,7 +13,7 @@ import {
   LinkupUnknownError,
 } from '../errors';
 import { LinkupClient } from '../linkup-client';
-import type { ImageSearchResult, SearchParams, Source, TextSearchResult } from '../types';
+import type { SearchParams, Source } from '../types';
 import { refineError } from '../utils/refine-error.utils';
 import type { X402Signer } from '../x402/types';
 
@@ -151,16 +151,16 @@ describe('LinkupClient', () => {
               url: 'http://foo.bar/baz',
             },
             {
-              content: 'foo bar baz',
-              favicon: 'http://foo.bar/favicon.ico',
+              favicon: 'http://bar.baz/favicon.ico',
               name: 'bar',
-              type: 'text',
-              url: 'http://foo.bar/baz',
+              snippet: 'bar baz qux',
+              url: 'http://bar.baz/qux',
             },
             {
+              favicon: 'http://foo.bar/favicon.ico',
               name: 'baz',
-              type: 'image',
-              url: 'http://foo.bar/baz',
+              snippet: '',
+              url: 'http://baz.qux/foo',
             },
           ],
         },
@@ -177,16 +177,14 @@ describe('LinkupClient', () => {
       expect((result.sources.at(0) as Source)?.url).toEqual('http://foo.bar/baz');
       expect((result.sources.at(0) as Source)?.snippet).toEqual('foo bar baz');
       expect((result.sources.at(0) as Source)?.favicon).toEqual('http://foo.bar/favicon.ico');
-      expect((result.sources.at(1) as TextSearchResult)?.type).toEqual('text');
-      expect((result.sources.at(1) as TextSearchResult)?.name).toEqual('bar');
-      expect((result.sources.at(1) as TextSearchResult)?.url).toEqual('http://foo.bar/baz');
-      expect((result.sources.at(1) as TextSearchResult)?.content).toEqual('foo bar baz');
-      expect((result.sources.at(1) as TextSearchResult)?.favicon).toEqual(
-        'http://foo.bar/favicon.ico',
-      );
-      expect((result.sources.at(2) as ImageSearchResult)?.type).toEqual('image');
-      expect((result.sources.at(2) as ImageSearchResult)?.name).toEqual('baz');
-      expect((result.sources.at(2) as ImageSearchResult)?.url).toEqual('http://foo.bar/baz');
+      expect((result.sources.at(1) as Source)?.name).toEqual('bar');
+      expect((result.sources.at(1) as Source)?.url).toEqual('http://bar.baz/qux');
+      expect((result.sources.at(1) as Source)?.snippet).toEqual('bar baz qux');
+      expect((result.sources.at(1) as Source)?.favicon).toEqual('http://bar.baz/favicon.ico');
+      expect((result.sources.at(2) as Source)?.name).toEqual('baz');
+      expect((result.sources.at(2) as Source)?.url).toEqual('http://baz.qux/foo');
+      expect((result.sources.at(2) as Source)?.snippet).toEqual('');
+      expect((result.sources.at(2) as Source)?.favicon).toEqual('http://foo.bar/favicon.ico');
     });
 
     it('should handle searchResults output type', async () => {
@@ -695,11 +693,15 @@ describe('LinkupClient', () => {
         },
       },
       {
-        description: '400 FETCH_URL_IS_FILE',
-        ErrorClass: FetchUrlIsFileError,
-        expectedMessage: 'The URL points to a file',
+        description: '400 FETCH_UNSUPPORTED_CONTENT_TYPE',
+        ErrorClass: LinkupFetchUnsupportedContentTypeError,
+        expectedMessage: 'The URL returned an unsupported content type',
         input: {
-          error: { code: 'FETCH_URL_IS_FILE', details: [], message: 'The URL points to a file' },
+          error: {
+            code: 'FETCH_UNSUPPORTED_CONTENT_TYPE',
+            details: [],
+            message: 'The URL returned an unsupported content type',
+          },
           statusCode: 400,
         },
       },

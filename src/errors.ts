@@ -108,6 +108,17 @@ export class LinkupFetchResponseTooLargeError extends LinkupError {
   }
 }
 
+export class LinkupFetchUnsupportedContentTypeError extends LinkupError {
+  constructor(message?: string) {
+    super(message);
+    this.name = LinkupFetchUnsupportedContentTypeError.name;
+
+    if ('captureStackTrace' in Error) {
+      Error.captureStackTrace(this, LinkupFetchUnsupportedContentTypeError);
+    }
+  }
+}
+
 // Payment required error, raised when x402 payment signing fails or the 402 persists after retry.
 export class LinkupPaymentRequiredError extends LinkupError {
   constructor(message?: string) {
@@ -120,7 +131,8 @@ export class LinkupPaymentRequiredError extends LinkupError {
   }
 }
 
-export class FetchUrlIsFileError extends LinkupError {
+// Backward-compatible alias for older platform deployments.
+export class FetchUrlIsFileError extends LinkupFetchUnsupportedContentTypeError {
   constructor(message?: string) {
     super(message);
     this.name = FetchUrlIsFileError.name;
