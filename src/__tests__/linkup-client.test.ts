@@ -746,6 +746,19 @@ describe('LinkupClient', () => {
         },
       },
       {
+        description: '429 EXCEED_BUDGET_LIMIT',
+        ErrorClass: LinkupInsufficientCreditError,
+        expectedMessage: 'The API key has reached its budget limit.',
+        input: {
+          error: {
+            code: 'EXCEED_BUDGET_LIMIT',
+            details: [],
+            message: 'The API key has reached its budget limit.',
+          },
+          statusCode: 429,
+        },
+      },
+      {
         description: '429 TOO_MANY_REQUESTS',
         ErrorClass: LinkupTooManyRequestsError,
         expectedMessage: 'Too many requests',
