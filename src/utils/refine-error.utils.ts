@@ -57,6 +57,7 @@ export const refineError = (e: LinkupApiError): LinkupError => {
     case 429:
       switch (code) {
         case 'INSUFFICIENT_FUNDS_CREDITS':
+        case 'EXCEED_BUDGET_LIMIT':
           return new LinkupInsufficientCreditError(message);
         case 'TOO_MANY_REQUESTS':
           return new LinkupTooManyRequestsError(message);
