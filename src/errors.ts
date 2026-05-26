@@ -46,6 +46,19 @@ export class LinkupAuthenticationError extends Error {
   }
 }
 
+// Task not found error, raised when the Linkup API returns a 404 status code.
+// It is returned when a task or research task does not exist.
+export class LinkupTaskNotFoundError extends LinkupError {
+  constructor(message?: string) {
+    super(message);
+    this.name = LinkupTaskNotFoundError.name;
+
+    if ('captureStackTrace' in Error) {
+      Error.captureStackTrace(this, LinkupTaskNotFoundError);
+    }
+  }
+}
+
 // Insufficient credit error, raised when the Linkup API returns a 429 status code.
 // It is returned when you have run out of credits.
 export class LinkupInsufficientCreditError extends LinkupError {
@@ -55,6 +68,19 @@ export class LinkupInsufficientCreditError extends LinkupError {
 
     if ('captureStackTrace' in Error) {
       Error.captureStackTrace(this, LinkupInsufficientCreditError);
+    }
+  }
+}
+
+// Tasks queue limit exceeded error, raised when the Linkup API returns a 429 status code.
+// It is returned when you submit more pending tasks than your organization queue allows.
+export class LinkupTasksQueueLimitExceededError extends LinkupError {
+  constructor(message?: string) {
+    super(message);
+    this.name = LinkupTasksQueueLimitExceededError.name;
+
+    if ('captureStackTrace' in Error) {
+      Error.captureStackTrace(this, LinkupTasksQueueLimitExceededError);
     }
   }
 }

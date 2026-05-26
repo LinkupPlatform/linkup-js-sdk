@@ -9,6 +9,8 @@ import {
   LinkupInvalidRequestError,
   LinkupNoResultError,
   LinkupPaymentRequiredError,
+  LinkupTaskNotFoundError,
+  LinkupTasksQueueLimitExceededError,
   LinkupTooManyRequestsError,
   LinkupUnknownError,
 } from '../errors';
@@ -54,11 +56,20 @@ export const refineError = (e: LinkupApiError): LinkupError => {
     case 401:
     case 403:
       return new LinkupAuthenticationError(message);
+    case 404:
+      switch (code) {
+        case 'TASK_NOT_FOUND':
+          return new LinkupTaskNotFoundError(message);
+        default:
+          return new LinkupUnknownError(`An unknown error occurred: ${error.message}`);
+      }
     case 429:
       switch (code) {
         case 'INSUFFICIENT_FUNDS_CREDITS':
         case 'EXCEED_BUDGET_LIMIT':
           return new LinkupInsufficientCreditError(message);
+        case 'TASKS_QUEUE_LIMIT_EXCEEDED':
+          return new LinkupTasksQueueLimitExceededError(message);
         case 'TOO_MANY_REQUESTS':
           return new LinkupTooManyRequestsError(message);
         default:
