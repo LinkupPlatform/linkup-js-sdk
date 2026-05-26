@@ -9,6 +9,8 @@ import {
   LinkupInvalidRequestError,
   LinkupNoResultError,
   LinkupPaymentRequiredError,
+  LinkupTaskNotFoundError,
+  LinkupTasksQueueLimitExceededError,
   LinkupTooManyRequestsError,
   LinkupUnknownError,
 } from '../errors';
@@ -733,6 +735,15 @@ describe('LinkupClient', () => {
         },
       },
       {
+        description: '404 TASK_NOT_FOUND',
+        ErrorClass: LinkupTaskNotFoundError,
+        expectedMessage: 'Task task-123 not found.',
+        input: {
+          error: { code: 'TASK_NOT_FOUND', details: [], message: 'Task task-123 not found.' },
+          statusCode: 404,
+        },
+      },
+      {
         description: '429 INSUFFICIENT_FUNDS_CREDITS',
         ErrorClass: LinkupInsufficientCreditError,
         expectedMessage: 'You do not have enough credits to perform this request.',
@@ -754,6 +765,21 @@ describe('LinkupClient', () => {
             code: 'EXCEED_BUDGET_LIMIT',
             details: [],
             message: 'The API key has reached its budget limit.',
+          },
+          statusCode: 429,
+        },
+      },
+      {
+        description: '429 TASKS_QUEUE_LIMIT_EXCEEDED',
+        ErrorClass: LinkupTasksQueueLimitExceededError,
+        expectedMessage:
+          'Too many pending tasks. You have 0 slots available (max 100). Please wait for some tasks to complete before submitting new ones.',
+        input: {
+          error: {
+            code: 'TASKS_QUEUE_LIMIT_EXCEEDED',
+            details: [],
+            message:
+              'Too many pending tasks. You have 0 slots available (max 100). Please wait for some tasks to complete before submitting new ones.',
           },
           statusCode: 429,
         },
