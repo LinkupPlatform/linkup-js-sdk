@@ -21,10 +21,9 @@ export type Structured = Record<string, unknown>;
 export type StructuredInputSchema = Structured | ZodObject<ZodRawShape>;
 
 export type FetchImage = {
-  alt?: string;
+  alt: string;
   url: string;
 };
-
 export type StructuredWithSources = {
   data: Structured;
   sources: StructuredSource[];

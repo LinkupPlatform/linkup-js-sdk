@@ -10,7 +10,7 @@ easy integration with Linkup's services.
 ## 🌟 Features
 
 - ✅ **Simple and intuitive API client.**
-- 🔍 **Supports both standard and deep search queries.**
+- 🔍 **Supports `standard`, `deep`, and beta `fast` search depths.**
 - 🧠 **Supports asynchronous research tasks and batched task workflows.**
 - 🔒 **Handles authentication and request management.**
 
@@ -50,7 +50,10 @@ const client = new LinkupClient({
 
 ### 📋 Search Endpoint
 
-All search queries can be used with two very different modes:
+All search queries can be used with three depth modes:
+
+- with beta `fast` `depth`, the search is optimized for the quickest turnaround on lightweight
+  queries
 
 - with `standard` `depth`, the search will be straightforward and fast, suited for relatively simple
   queries (e.g. "What's the weather in Paris today?")
