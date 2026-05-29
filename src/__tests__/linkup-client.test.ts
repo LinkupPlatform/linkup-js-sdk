@@ -73,8 +73,8 @@ describe('LinkupClient', () => {
       mockAxiosInstance.post.mockResolvedValueOnce({
         data: { answer: '' },
       } as AxiosResponse);
-      const fromDate = new Date('2025-01-01');
-      const toDate = new Date('2025-01-02');
+      const fromDate = new Date('2025-01-01T12:34:56.000Z');
+      const toDate = new Date('2025-01-02T23:45:01.000Z');
 
       await underTest.search({
         depth: 'deep',
@@ -93,14 +93,14 @@ describe('LinkupClient', () => {
       expect(mockAxiosInstance.post).toHaveBeenCalledWith('/search', {
         depth: 'deep',
         excludeDomains: ['baz.com', 'qux.com'],
-        fromDate: fromDate.toISOString(),
+        fromDate: '2025-01-01',
         includeDomains: ['foo.com', 'bar.com'],
         includeImages: true,
         includeInlineCitations: true,
         maxResults: 10,
         outputType: 'sourcedAnswer',
         q: 'foo',
-        toDate: toDate.toISOString(),
+        toDate: '2025-01-02',
       });
     });
 
@@ -366,6 +366,40 @@ describe('LinkupClient', () => {
   });
 
   describe('research methods', () => {
+    it('should serialize research date filters as ISO dates', async () => {
+      mockAxiosInstance.post.mockResolvedValueOnce({
+        data: {
+          createdAt: '2026-05-18T00:00:00.000Z',
+          error: null,
+          id: '2dbcc4bb-2c0d-4bcb-aaf5-44f7cbcf4eee',
+          input: {
+            fromDate: '2025-01-01',
+            outputType: 'sourcedAnswer',
+            q: 'What changed?',
+            toDate: '2025-01-02',
+          },
+          output: null,
+          status: 'pending',
+          type: 'research',
+          updatedAt: '2026-05-18T00:00:00.000Z',
+        },
+      } as AxiosResponse);
+
+      await underTest.research({
+        fromDate: new Date('2025-01-01T12:34:56.000Z'),
+        outputType: 'sourcedAnswer',
+        query: 'What changed?',
+        toDate: new Date('2025-01-02T23:45:01.000Z'),
+      });
+
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/research', {
+        fromDate: '2025-01-01',
+        outputType: 'sourcedAnswer',
+        q: 'What changed?',
+        toDate: '2025-01-02',
+      });
+    });
+
     it('should create a research task and normalize the returned input', async () => {
       mockAxiosInstance.post.mockResolvedValueOnce({
         data: {

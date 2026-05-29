@@ -164,8 +164,8 @@ export class LinkupClient {
       ...(includeImages && { includeImages }),
       ...(includeDomains && { includeDomains }),
       ...(excludeDomains && { excludeDomains }),
-      ...(fromDate && { fromDate: fromDate.toISOString() }),
-      ...(toDate && { toDate: toDate.toISOString() }),
+      ...(fromDate && { fromDate: this.serializeDate(fromDate) }),
+      ...(toDate && { toDate: this.serializeDate(toDate) }),
       ...(maxResults && { maxResults }),
     };
 
@@ -203,8 +203,8 @@ export class LinkupClient {
       q: query,
       ...(includeDomains && { includeDomains }),
       ...(excludeDomains && { excludeDomains }),
-      ...(fromDate && { fromDate: fromDate.toISOString() }),
-      ...(toDate && { toDate: toDate.toISOString() }),
+      ...(fromDate && { fromDate: this.serializeDate(fromDate) }),
+      ...(toDate && { toDate: this.serializeDate(toDate) }),
       ...(mode && { mode }),
       ...(reasoningDepth && { reasoningDepth }),
     };
@@ -222,6 +222,10 @@ export class LinkupClient {
     return JSON.stringify(
       isZodObject(schema) ? zodToJsonSchema(schema as ZodObject<ZodRawShape>) : schema,
     );
+  }
+
+  private serializeDate(date: Date): string {
+    return date.toISOString().slice(0, 10);
   }
 
   private sanitizeTaskRequest(task: TaskRequest): {
