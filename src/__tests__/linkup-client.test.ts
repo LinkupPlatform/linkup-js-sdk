@@ -93,14 +93,42 @@ describe('LinkupClient', () => {
       expect(mockAxiosInstance.post).toHaveBeenCalledWith('/search', {
         depth: 'deep',
         excludeDomains: ['baz.com', 'qux.com'],
-        fromDate: fromDate.toISOString(),
+        fromDate: '2025-01-01',
         includeDomains: ['foo.com', 'bar.com'],
         includeImages: true,
         includeInlineCitations: true,
         maxResults: 10,
         outputType: 'sourcedAnswer',
         q: 'foo',
-        toDate: toDate.toISOString(),
+        toDate: '2025-01-02',
+      });
+    });
+
+    it('should preserve explicit false flags and forward string dates as-is', async () => {
+      mockAxiosInstance.post.mockResolvedValueOnce({
+        data: { results: [] },
+      } as AxiosResponse);
+
+      await underTest.search({
+        depth: 'standard',
+        fromDate: '2026-05-01',
+        includeImages: false,
+        includeSources: false,
+        outputType: 'structured',
+        query: 'foo',
+        structuredOutputSchema: { type: 'string' },
+        toDate: '2026-05-31',
+      });
+
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/search', {
+        depth: 'standard',
+        fromDate: '2026-05-01',
+        includeImages: false,
+        includeSources: false,
+        outputType: 'structured',
+        q: 'foo',
+        structuredOutputSchema: JSON.stringify({ type: 'string' }),
+        toDate: '2026-05-31',
       });
     });
 
@@ -373,7 +401,7 @@ describe('LinkupClient', () => {
           error: null,
           id: '2dbcc4bb-2c0d-4bcb-aaf5-44f7cbcf4eee',
           input: {
-            mode: 'Auto',
+            mode: 'auto',
             outputType: 'sourcedAnswer',
             q: 'What changed?',
             reasoningDepth: 'L',
@@ -395,7 +423,7 @@ describe('LinkupClient', () => {
         q: 'What changed?',
       });
       expect(result.input).toEqual({
-        mode: 'Auto',
+        mode: 'auto',
         outputType: 'sourcedAnswer',
         query: 'What changed?',
         reasoningDepth: 'L',
@@ -409,7 +437,7 @@ describe('LinkupClient', () => {
           error: null,
           id: 'abc-123',
           input: {
-            mode: 'Auto',
+            mode: 'auto',
             outputType: 'sourcedAnswer',
             q: 'deep question',
             reasoningDepth: 'XL',
@@ -708,11 +736,11 @@ describe('LinkupClient', () => {
         },
       },
       {
-        description: '402 PAYMENT_REQUIRED',
+        description: '402 X402_PAYMENT_REQUIRED',
         ErrorClass: LinkupPaymentRequiredError,
         expectedMessage: 'Payment required',
         input: {
-          error: { code: 'PAYMENT_REQUIRED', details: [], message: 'Payment required' },
+          error: { code: 'X402_PAYMENT_REQUIRED', details: [], message: 'Payment required' },
           statusCode: 402,
         },
       },

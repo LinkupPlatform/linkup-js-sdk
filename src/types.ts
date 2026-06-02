@@ -35,8 +35,8 @@ type BaseSearchRequestParams = {
   query: string;
   includeDomains?: string[];
   excludeDomains?: string[];
-  fromDate?: Date;
-  toDate?: Date;
+  fromDate?: Date | string;
+  toDate?: Date | string;
 };
 
 export type SearchParams = BaseSearchRequestParams & {

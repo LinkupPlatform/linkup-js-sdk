@@ -161,19 +161,19 @@ export class LinkupClient {
       depth,
       outputType,
       q: query,
-      ...(includeImages && { includeImages }),
+      ...(includeImages !== undefined && { includeImages }),
       ...(includeDomains && { includeDomains }),
       ...(excludeDomains && { excludeDomains }),
-      ...(fromDate && { fromDate: fromDate.toISOString() }),
-      ...(toDate && { toDate: toDate.toISOString() }),
-      ...(maxResults && { maxResults }),
+      ...(fromDate && { fromDate: this.serializeDate(fromDate) }),
+      ...(toDate && { toDate: this.serializeDate(toDate) }),
+      ...(maxResults !== undefined && { maxResults }),
     };
 
-    if ('includeInlineCitations' in params && params.includeInlineCitations) {
+    if ('includeInlineCitations' in params && params.includeInlineCitations !== undefined) {
       result.includeInlineCitations = params.includeInlineCitations;
     }
 
-    if ('includeSources' in params && params.includeSources) {
+    if ('includeSources' in params && params.includeSources !== undefined) {
       result.includeSources = params.includeSources;
     }
 
@@ -203,10 +203,10 @@ export class LinkupClient {
       q: query,
       ...(includeDomains && { includeDomains }),
       ...(excludeDomains && { excludeDomains }),
-      ...(fromDate && { fromDate: fromDate.toISOString() }),
-      ...(toDate && { toDate: toDate.toISOString() }),
-      ...(mode && { mode }),
-      ...(reasoningDepth && { reasoningDepth }),
+      ...(fromDate && { fromDate: this.serializeDate(fromDate) }),
+      ...(toDate && { toDate: this.serializeDate(toDate) }),
+      ...(mode !== undefined && { mode }),
+      ...(reasoningDepth !== undefined && { reasoningDepth }),
     };
 
     if ('structuredOutputSchema' in params) {
@@ -222,6 +222,10 @@ export class LinkupClient {
     return JSON.stringify(
       isZodObject(schema) ? zodToJsonSchema(schema as ZodObject<ZodRawShape>) : schema,
     );
+  }
+
+  private serializeDate(value: Date | string): string {
+    return value instanceof Date ? value.toISOString().slice(0, 10) : value;
   }
 
   private sanitizeTaskRequest(task: TaskRequest): {
