@@ -1,6 +1,7 @@
 import {
   FetchUrlIsFileError,
   LinkupAuthenticationError,
+  LinkupBudgetLimitExceededError,
   LinkupError,
   LinkupFetchError,
   LinkupFetchResponseTooLargeError,
@@ -66,8 +67,9 @@ export const refineError = (e: LinkupApiError): LinkupError => {
     case 429:
       switch (code) {
         case 'INSUFFICIENT_FUNDS_CREDITS':
-        case 'EXCEED_BUDGET_LIMIT':
           return new LinkupInsufficientCreditError(message);
+        case 'EXCEED_BUDGET_LIMIT':
+          return new LinkupBudgetLimitExceededError(message);
         case 'TASKS_QUEUE_LIMIT_EXCEEDED':
           return new LinkupTasksQueueLimitExceededError(message);
         case 'TOO_MANY_REQUESTS':

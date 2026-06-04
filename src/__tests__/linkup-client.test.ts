@@ -2,6 +2,7 @@ import axios, { type AxiosResponse } from 'axios';
 import { z } from 'zod';
 import {
   LinkupAuthenticationError,
+  LinkupBudgetLimitExceededError,
   LinkupFetchError,
   LinkupFetchResponseTooLargeError,
   LinkupFetchUnsupportedContentTypeError,
@@ -786,7 +787,7 @@ describe('LinkupClient', () => {
       },
       {
         description: '429 EXCEED_BUDGET_LIMIT',
-        ErrorClass: LinkupInsufficientCreditError,
+        ErrorClass: LinkupBudgetLimitExceededError,
         expectedMessage: 'The API key has reached its budget limit.',
         input: {
           error: {

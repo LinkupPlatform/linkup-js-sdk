@@ -72,6 +72,19 @@ export class LinkupInsufficientCreditError extends LinkupError {
   }
 }
 
+// Budget limit exceeded error, raised when the Linkup API returns a 429 status code.
+// It is returned when the API key has reached its configured budget limit.
+export class LinkupBudgetLimitExceededError extends LinkupError {
+  constructor(message?: string) {
+    super(message);
+    this.name = LinkupBudgetLimitExceededError.name;
+
+    if ('captureStackTrace' in Error) {
+      Error.captureStackTrace(this, LinkupBudgetLimitExceededError);
+    }
+  }
+}
+
 // Tasks queue limit exceeded error, raised when the Linkup API returns a 429 status code.
 // It is returned when you submit more pending tasks than your organization queue allows.
 export class LinkupTasksQueueLimitExceededError extends LinkupError {
