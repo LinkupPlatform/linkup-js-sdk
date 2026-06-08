@@ -133,6 +133,28 @@ describe('LinkupClient', () => {
       });
     });
 
+    it('should forward structured output schemas passed as JSON strings without double encoding', async () => {
+      mockAxiosInstance.post.mockResolvedValueOnce({
+        data: { results: [] },
+      } as AxiosResponse);
+
+      const schema = JSON.stringify({ properties: { foo: { type: 'string' } }, type: 'object' });
+
+      await underTest.search({
+        depth: 'standard',
+        outputType: 'structured',
+        query: 'foo',
+        structuredOutputSchema: schema,
+      });
+
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/search', {
+        depth: 'standard',
+        outputType: 'structured',
+        q: 'foo',
+        structuredOutputSchema: schema,
+      });
+    });
+
     it('should use custom base URL if provided', async () => {
       const customMockInstance = {
         interceptors: {

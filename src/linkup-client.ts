@@ -15,6 +15,7 @@ import {
   ResearchParams,
   ResearchTask,
   SearchParams,
+  StructuredInputSchema,
   Task,
   TaskRequest,
 } from './types';
@@ -218,7 +219,11 @@ export class LinkupClient {
     return result;
   }
 
-  private serializeStructuredOutputSchema(schema: unknown): string {
+  private serializeStructuredOutputSchema(schema: StructuredInputSchema): string {
+    if (typeof schema === 'string') {
+      return schema;
+    }
+
     return JSON.stringify(
       isZodObject(schema) ? zodToJsonSchema(schema as ZodObject<ZodRawShape>) : schema,
     );
