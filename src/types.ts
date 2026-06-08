@@ -18,7 +18,7 @@ export type ApiConfig = ApiKeyConfig | X402Config;
 
 export type Structured = Record<string, unknown>;
 
-export type StructuredInputSchema = Structured | ZodObject<ZodRawShape>;
+export type StructuredInputSchema = Structured | string | ZodObject<ZodRawShape>;
 
 export type FetchImage = {
   alt: string;
