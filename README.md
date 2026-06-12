@@ -61,6 +61,14 @@ All search queries can be used with three depth modes:
   but it will be able to solve more complex queries (e.g. "What is the company profile of LangChain
   accross the last few years, and how does it compare to its concurrents?")
 
+You can also refine search requests with:
+
+- `includeDomains` and `excludeDomains` domain filters (`includeDomains` accepts up to 100 entries)
+- `fromDate` and `toDate` ISO date filters
+- `maxResults` to cap the number of returned results
+- `includeInlineCitations` for `sourcedAnswer` output
+- `includeSources` for `structured` output responses
+
 #### 📝 Example standard search query
 
 ```typescript
@@ -114,6 +122,12 @@ fetchLinkup()
 
 Use `research` to create an asynchronous research task, then poll it later or list recent runs.
 
+The research endpoint also supports:
+
+- `mode`: `answer`, `auto`, `investigate`, or `research`
+- `reasoningDepth`: `S`, `M`, `L`, or `XL`
+- `listResearch({ page, pageSize, sortBy, sortDirection })` to page through recent runs
+
 ```typescript
 import { LinkupClient } from 'linkup-sdk';
 
@@ -124,15 +138,21 @@ const client = new LinkupClient({
 const task = await client.research({
   query: 'Research the current state of the semiconductor market, covering key market dynamics, major industry players and their strategic positioning, recent analyst sentiment, and the main bull and bear cases for the sector. Ground the report in sourced, factual information.',
   outputType: 'sourcedAnswer',
+  mode: 'auto',
+  reasoningDepth: 'L',
 });
 
 const latest = await client.getResearch(task.id);
+const recent = await client.listResearch({ page: 1, pageSize: 10, sortDirection: 'desc' });
 ```
 
 ### 🗂️ Tasks Endpoint
 
 Use `createTasks` to submit mixed `search`, `fetch`, and `research` jobs in one batch, then inspect
 them through `listTasks` or `getTask`.
+
+`createTasks` accepts up to 100 tasks per batch. `listTasks` supports pagination and filtering via
+`page`, `pageSize`, `sortBy`, `sortDirection`, `status`, and `type`.
 
 ```typescript
 import { LinkupClient } from 'linkup-sdk';
@@ -159,6 +179,17 @@ const tasks = await client.createTasks([
 ]);
 
 console.log(tasks.map(task => task.id));
+
+const queued = await client.listTasks({
+  status: ['pending', 'processing'],
+  type: ['search', 'research'],
+  sortBy: 'updatedAt',
+  sortDirection: 'desc',
+  page: 1,
+  pageSize: 20,
+});
+
+console.log(queued.quota);
 ```
 
 ### 💳 X402 Payment Protocol
