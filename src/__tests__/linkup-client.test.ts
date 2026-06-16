@@ -644,6 +644,74 @@ describe('LinkupClient', () => {
       expect(result.quota.inFlight).toBe(1);
     });
 
+    it('should preserve unsupported task variants returned by the API', async () => {
+      mockAxiosInstance.get.mockResolvedValueOnce({
+        data: {
+          data: [
+            {
+              createdAt: '2026-05-18T00:00:00.000Z',
+              error: null,
+              id: 'extract-task-1',
+              input: {
+                q: 'companies founded in paris',
+                schema: {
+                  type: 'object',
+                },
+              },
+              output: {
+                rows: [{ company: 'Linkup' }],
+                rowsReturned: 1,
+              },
+              status: 'completed',
+              type: 'extract',
+              updatedAt: '2026-05-18T01:00:00.000Z',
+            },
+          ],
+          metadata: { page: 1, pageSize: 5, total: 1, totalPages: 1 },
+          quota: { inFlight: 1, limit: 100 },
+        },
+      } as AxiosResponse);
+
+      const result = await underTest.listTasks();
+
+      expect(result.data[0]).toMatchObject({
+        id: 'extract-task-1',
+        rawType: 'extract',
+        type: 'unsupported',
+      });
+      if (result.data[0].type === 'unsupported') {
+        expect(result.data[0].output).toEqual({
+          rows: [{ company: 'Linkup' }],
+          rowsReturned: 1,
+        });
+      }
+    });
+
+    it('should preserve unsupported tasks when fetching a single task', async () => {
+      mockAxiosInstance.get.mockResolvedValueOnce({
+        data: {
+          createdAt: '2026-05-18T00:00:00.000Z',
+          error: null,
+          id: 'extract-task-2',
+          input: {
+            q: 'companies founded in paris',
+          },
+          output: null,
+          status: 'processing',
+          type: 'extract',
+          updatedAt: '2026-05-18T01:00:00.000Z',
+        },
+      } as AxiosResponse);
+
+      const result = await underTest.getTask('extract-task-2');
+
+      expect(result).toMatchObject({
+        id: 'extract-task-2',
+        rawType: 'extract',
+        type: 'unsupported',
+      });
+    });
+
     it('should serialize repeated list task filters without array brackets', async () => {
       mockAxiosInstance.get.mockResolvedValueOnce({
         data: {

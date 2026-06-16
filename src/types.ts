@@ -209,7 +209,11 @@ export type FetchTask = TaskBase<'fetch', FetchParams, FetchTaskOutput>;
 
 export type ResearchTask = TaskBase<'research', ResearchTaskInput, ResearchResult>;
 
-export type Task = SearchTask | FetchTask | ResearchTask;
+export type UnsupportedTask = TaskBase<'unsupported', Record<string, unknown>, unknown> & {
+  rawType: string;
+};
+
+export type Task = SearchTask | FetchTask | ResearchTask | UnsupportedTask;
 
 export type PaginationMetadata = {
   page: number;
