@@ -182,7 +182,7 @@ export type TaskRequest =
   | { type: 'fetch'; input: FetchParams }
   | { type: 'research'; input: ResearchParams };
 
-type TaskBase<TType extends TaskType, TInput, TOutput> = {
+type TaskBase<TType extends string, TInput, TOutput> = {
   createdAt: string;
   error: string | null;
   id: string;

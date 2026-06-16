@@ -298,7 +298,7 @@ export class LinkupClient {
           input: this.normalizeSearchLikeInput(normalizedTask.input),
         } as Task;
       case 'fetch':
-        return normalizedTask;
+        return normalizedTask as Task;
       case 'research':
         return {
           ...normalizedTask,
