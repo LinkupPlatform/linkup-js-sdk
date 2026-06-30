@@ -614,6 +614,29 @@ describe('LinkupClient', () => {
       }
     });
 
+    it('should reject unsupported task types returned by getTask', async () => {
+      mockAxiosInstance.get.mockResolvedValueOnce({
+        data: {
+          createdAt: '2026-05-18T00:00:00.000Z',
+          error: null,
+          id: 'task-extract',
+          input: {
+            q: 'hello',
+            url: 'https://example.com',
+          },
+          output: null,
+          status: 'pending',
+          type: 'extract',
+          updatedAt: '2026-05-18T01:00:00.000Z',
+        },
+      } as AxiosResponse);
+
+      const error = await underTest.getTask('task-extract').catch(e => e);
+
+      expect(error).toBeInstanceOf(LinkupUnknownError);
+      expect(error.message).toContain("unsupported task type 'extract'");
+    });
+
     it('should list tasks with filters and pagination', async () => {
       mockAxiosInstance.get.mockResolvedValueOnce({
         data: {
@@ -681,6 +704,35 @@ describe('LinkupClient', () => {
       expect(config.paramsSerializer(config.params)).toBe(
         'status=pending&status=processing&type=search&type=research',
       );
+    });
+
+    it('should reject unsupported task types returned by listTasks', async () => {
+      mockAxiosInstance.get.mockResolvedValueOnce({
+        data: {
+          data: [
+            {
+              createdAt: '2026-05-18T00:00:00.000Z',
+              error: null,
+              id: 'task-extract',
+              input: {
+                q: 'hello',
+                url: 'https://example.com',
+              },
+              output: null,
+              status: 'pending',
+              type: 'extract',
+              updatedAt: '2026-05-18T01:00:00.000Z',
+            },
+          ],
+          metadata: { page: 1, pageSize: 5, total: 1, totalPages: 1 },
+          quota: { inFlight: 1, limit: 100 },
+        },
+      } as AxiosResponse);
+
+      const error = await underTest.listTasks({ page: 1 }).catch(e => e);
+
+      expect(error).toBeInstanceOf(LinkupUnknownError);
+      expect(error.message).toContain("unsupported task type 'extract'");
     });
   });
 
@@ -782,6 +834,20 @@ describe('LinkupClient', () => {
         expectedMessage: 'Forbidden action',
         input: {
           error: { code: 'FORBIDDEN', details: [], message: 'Forbidden action' },
+          statusCode: 403,
+        },
+      },
+      {
+        description: '403 TASK_TYPE_NOT_SUPPORTED',
+        ErrorClass: LinkupUnknownError,
+        expectedMessage:
+          'Unsupported task type: Extract tasks are not enabled for this organization.',
+        input: {
+          error: {
+            code: 'TASK_TYPE_NOT_SUPPORTED',
+            details: [],
+            message: 'Extract tasks are not enabled for this organization.',
+          },
           statusCode: 403,
         },
       },

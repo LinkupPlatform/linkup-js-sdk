@@ -2,7 +2,7 @@ import axios, { AxiosInstance } from 'axios';
 import { ZodObject, ZodRawShape } from 'zod';
 import zodToJsonSchema from 'zod-to-json-schema';
 import { version } from '../package.json';
-import { LinkupPaymentRequiredError } from './errors';
+import { LinkupPaymentRequiredError, LinkupUnknownError } from './errors';
 import {
   ApiConfig,
   FetchParams,
@@ -286,21 +286,28 @@ export class LinkupClient {
   }
 
   private normalizeTask(task: unknown): Task {
-    const normalizedTask = task as Task & { input: Record<string, unknown> };
+    const normalizedTask = task as {
+      input?: Record<string, unknown>;
+      type?: string;
+    } & Record<string, unknown>;
 
     switch (normalizedTask.type) {
       case 'search':
         return {
           ...normalizedTask,
-          input: this.normalizeSearchLikeInput(normalizedTask.input),
+          input: this.normalizeSearchLikeInput(normalizedTask.input ?? {}),
         } as Task;
       case 'fetch':
-        return normalizedTask;
+        return normalizedTask as Task;
       case 'research':
         return {
           ...normalizedTask,
-          input: this.normalizeSearchLikeInput(normalizedTask.input),
+          input: this.normalizeSearchLikeInput(normalizedTask.input ?? {}),
         } as Task;
+      default:
+        throw new LinkupUnknownError(
+          `The Linkup API returned an unsupported task type '${String(normalizedTask.type)}'. This SDK supports search, fetch, and research tasks only.`,
+        );
     }
   }
 
