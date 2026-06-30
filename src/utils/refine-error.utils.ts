@@ -55,8 +55,14 @@ export const refineError = (e: LinkupApiError): LinkupError => {
     case 402:
       return new LinkupPaymentRequiredError(message);
     case 401:
-    case 403:
       return new LinkupAuthenticationError(message);
+    case 403:
+      switch (code) {
+        case 'TASK_TYPE_NOT_SUPPORTED':
+          return new LinkupUnknownError(`Unsupported task type: ${message}`);
+        default:
+          return new LinkupAuthenticationError(message);
+      }
     case 404:
       switch (code) {
         case 'TASK_NOT_FOUND':
