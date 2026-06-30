@@ -286,20 +286,23 @@ export class LinkupClient {
   }
 
   private normalizeTask(task: unknown): Task {
-    const normalizedTask = task as Task & { input: Record<string, unknown> };
+    const normalizedTask = task as {
+      input?: Record<string, unknown>;
+      type?: string;
+    } & Record<string, unknown>;
 
     switch (normalizedTask.type) {
       case 'search':
         return {
           ...normalizedTask,
-          input: this.normalizeSearchLikeInput(normalizedTask.input),
+          input: this.normalizeSearchLikeInput(normalizedTask.input ?? {}),
         } as Task;
       case 'fetch':
-        return normalizedTask;
+        return normalizedTask as Task;
       case 'research':
         return {
           ...normalizedTask,
-          input: this.normalizeSearchLikeInput(normalizedTask.input),
+          input: this.normalizeSearchLikeInput(normalizedTask.input ?? {}),
         } as Task;
       default:
         throw new LinkupUnknownError(
