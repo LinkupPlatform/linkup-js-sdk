@@ -33,15 +33,27 @@ export class LinkupNoResultError extends LinkupError {
   }
 }
 
-// Authentication error, raised when the Linkup API returns a 403 status code.
+// Authentication error, raised when the Linkup API returns a 401 or 403 status code.
 // It is returned when there is an authentication issue, typically when the API key is not valid.
-export class LinkupAuthenticationError extends Error {
+export class LinkupAuthenticationError extends LinkupError {
   constructor(message?: string) {
     super(message);
     this.name = LinkupAuthenticationError.name;
 
     if ('captureStackTrace' in Error) {
       Error.captureStackTrace(this, LinkupAuthenticationError);
+    }
+  }
+}
+
+// IP whitelist error, raised when the Linkup API returns a 403 status code for a non-whitelisted IP.
+export class LinkupIpNotWhitelistedError extends LinkupAuthenticationError {
+  constructor(message?: string) {
+    super(message);
+    this.name = LinkupIpNotWhitelistedError.name;
+
+    if ('captureStackTrace' in Error) {
+      Error.captureStackTrace(this, LinkupIpNotWhitelistedError);
     }
   }
 }
@@ -166,6 +178,54 @@ export class LinkupPaymentRequiredError extends LinkupError {
 
     if ('captureStackTrace' in Error) {
       Error.captureStackTrace(this, LinkupPaymentRequiredError);
+    }
+  }
+}
+
+// Payment payload invalid error, raised when the Linkup API rejects the provided x402 payment payload.
+export class LinkupPaymentPayloadInvalidError extends LinkupPaymentRequiredError {
+  constructor(message?: string) {
+    super(message);
+    this.name = LinkupPaymentPayloadInvalidError.name;
+
+    if ('captureStackTrace' in Error) {
+      Error.captureStackTrace(this, LinkupPaymentPayloadInvalidError);
+    }
+  }
+}
+
+// Payment verification failed error, raised when the Linkup API cannot verify the x402 payment.
+export class LinkupPaymentVerificationFailedError extends LinkupPaymentRequiredError {
+  constructor(message?: string) {
+    super(message);
+    this.name = LinkupPaymentVerificationFailedError.name;
+
+    if ('captureStackTrace' in Error) {
+      Error.captureStackTrace(this, LinkupPaymentVerificationFailedError);
+    }
+  }
+}
+
+// Payment settlement failed error, raised when the Linkup API cannot settle the x402 payment.
+export class LinkupPaymentSettlementFailedError extends LinkupPaymentRequiredError {
+  constructor(message?: string) {
+    super(message);
+    this.name = LinkupPaymentSettlementFailedError.name;
+
+    if ('captureStackTrace' in Error) {
+      Error.captureStackTrace(this, LinkupPaymentSettlementFailedError);
+    }
+  }
+}
+
+// Unsupported task type error, raised when the Linkup API rejects a task type for the organization.
+export class LinkupUnsupportedTaskTypeError extends LinkupError {
+  constructor(message?: string) {
+    super(message);
+    this.name = LinkupUnsupportedTaskTypeError.name;
+
+    if ('captureStackTrace' in Error) {
+      Error.captureStackTrace(this, LinkupUnsupportedTaskTypeError);
     }
   }
 }

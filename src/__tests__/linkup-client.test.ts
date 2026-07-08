@@ -3,17 +3,23 @@ import { z } from 'zod';
 import {
   LinkupAuthenticationError,
   LinkupBudgetLimitExceededError,
+  LinkupError,
   LinkupFetchError,
   LinkupFetchResponseTooLargeError,
   LinkupFetchUnsupportedContentTypeError,
   LinkupInsufficientCreditError,
+  LinkupIpNotWhitelistedError,
   LinkupInvalidRequestError,
   LinkupNoResultError,
+  LinkupPaymentPayloadInvalidError,
   LinkupPaymentRequiredError,
+  LinkupPaymentSettlementFailedError,
+  LinkupPaymentVerificationFailedError,
   LinkupTaskNotFoundError,
   LinkupTasksQueueLimitExceededError,
   LinkupTooManyRequestsError,
   LinkupUnknownError,
+  LinkupUnsupportedTaskTypeError,
 } from '../errors';
 import { LinkupClient } from '../linkup-client';
 import type { SearchParams, Source } from '../types';
@@ -820,6 +826,45 @@ describe('LinkupClient', () => {
         },
       },
       {
+        description: '402 X402_PAYMENT_PAYLOAD_INVALID',
+        ErrorClass: LinkupPaymentPayloadInvalidError,
+        expectedMessage: 'Invalid payment payload',
+        input: {
+          error: {
+            code: 'X402_PAYMENT_PAYLOAD_INVALID',
+            details: [],
+            message: 'Invalid payment payload',
+          },
+          statusCode: 402,
+        },
+      },
+      {
+        description: '402 X402_PAYMENT_VERIFICATION_FAILED',
+        ErrorClass: LinkupPaymentVerificationFailedError,
+        expectedMessage: 'Payment verification failed',
+        input: {
+          error: {
+            code: 'X402_PAYMENT_VERIFICATION_FAILED',
+            details: [],
+            message: 'Payment verification failed',
+          },
+          statusCode: 402,
+        },
+      },
+      {
+        description: '402 X402_PAYMENT_SETTLEMENT_FAILED',
+        ErrorClass: LinkupPaymentSettlementFailedError,
+        expectedMessage: 'Payment settlement failed',
+        input: {
+          error: {
+            code: 'X402_PAYMENT_SETTLEMENT_FAILED',
+            details: [],
+            message: 'Payment settlement failed',
+          },
+          statusCode: 402,
+        },
+      },
+      {
         description: '401',
         ErrorClass: LinkupAuthenticationError,
         expectedMessage: 'Unauthorized action',
@@ -838,10 +883,22 @@ describe('LinkupClient', () => {
         },
       },
       {
+        description: '403 IP_NOT_WHITELISTED',
+        ErrorClass: LinkupIpNotWhitelistedError,
+        expectedMessage: 'IP address 203.0.113.10 is not whitelisted',
+        input: {
+          error: {
+            code: 'IP_NOT_WHITELISTED',
+            details: [],
+            message: 'IP address 203.0.113.10 is not whitelisted',
+          },
+          statusCode: 403,
+        },
+      },
+      {
         description: '403 TASK_TYPE_NOT_SUPPORTED',
-        ErrorClass: LinkupUnknownError,
-        expectedMessage:
-          'Unsupported task type: Extract tasks are not enabled for this organization.',
+        ErrorClass: LinkupUnsupportedTaskTypeError,
+        expectedMessage: 'Extract tasks are not enabled for this organization.',
         input: {
           error: {
             code: 'TASK_TYPE_NOT_SUPPORTED',
@@ -945,6 +1002,39 @@ describe('LinkupClient', () => {
       const error = await underTest.search({} as SearchParams).catch(e => e);
       expect(error).toBeInstanceOf(LinkupUnknownError);
       expect(error.message).toContain('An unknown error occurred');
+    });
+
+    it.each([
+      {
+        input: {
+          error: { code: 'UNAUTHORIZED', details: [], message: 'Unauthorized action' },
+          statusCode: 401,
+        },
+        parentClass: LinkupAuthenticationError,
+      },
+      {
+        input: {
+          error: {
+            code: 'IP_NOT_WHITELISTED',
+            details: [],
+            message: 'IP address 203.0.113.10 is not whitelisted',
+          },
+          statusCode: 403,
+        },
+        parentClass: LinkupAuthenticationError,
+      },
+      {
+        input: {
+          error: { code: 'X402_PAYMENT_VERIFICATION_FAILED', details: [], message: 'failed' },
+          statusCode: 402,
+        },
+        parentClass: LinkupPaymentRequiredError,
+      },
+    ])('should keep refined errors in the shared SDK hierarchy', ({ input, parentClass }) => {
+      const error = refineError(input);
+
+      expect(error).toBeInstanceOf(parentClass);
+      expect(error).toBeInstanceOf(LinkupError);
     });
   });
 

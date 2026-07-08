@@ -7,13 +7,18 @@ import {
   LinkupFetchResponseTooLargeError,
   LinkupFetchUnsupportedContentTypeError,
   LinkupInsufficientCreditError,
+  LinkupIpNotWhitelistedError,
   LinkupInvalidRequestError,
   LinkupNoResultError,
+  LinkupPaymentPayloadInvalidError,
   LinkupPaymentRequiredError,
+  LinkupPaymentSettlementFailedError,
+  LinkupPaymentVerificationFailedError,
   LinkupTaskNotFoundError,
   LinkupTasksQueueLimitExceededError,
   LinkupTooManyRequestsError,
   LinkupUnknownError,
+  LinkupUnsupportedTaskTypeError,
 } from '../errors';
 import type { LinkupApiError } from '../types';
 
@@ -53,13 +58,24 @@ export const refineError = (e: LinkupApiError): LinkupError => {
           return new LinkupInvalidRequestError(concatErrorAndDetails(e));
       }
     case 402:
-      return new LinkupPaymentRequiredError(message);
+      switch (code) {
+        case 'X402_PAYMENT_PAYLOAD_INVALID':
+          return new LinkupPaymentPayloadInvalidError(message);
+        case 'X402_PAYMENT_VERIFICATION_FAILED':
+          return new LinkupPaymentVerificationFailedError(message);
+        case 'X402_PAYMENT_SETTLEMENT_FAILED':
+          return new LinkupPaymentSettlementFailedError(message);
+        default:
+          return new LinkupPaymentRequiredError(message);
+      }
     case 401:
       return new LinkupAuthenticationError(message);
     case 403:
       switch (code) {
+        case 'IP_NOT_WHITELISTED':
+          return new LinkupIpNotWhitelistedError(message);
         case 'TASK_TYPE_NOT_SUPPORTED':
-          return new LinkupUnknownError(`Unsupported task type: ${message}`);
+          return new LinkupUnsupportedTaskTypeError(message);
         default:
           return new LinkupAuthenticationError(message);
       }
