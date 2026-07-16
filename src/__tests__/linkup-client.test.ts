@@ -11,8 +11,8 @@ import {
   LinkupNoResultError,
   LinkupPaymentRequiredError,
   LinkupTaskNotFoundError,
-  LinkupTaskTypeNotSupportedError,
   LinkupTasksQueueLimitExceededError,
+  LinkupTaskTypeNotSupportedError,
   LinkupTooManyRequestsError,
   LinkupUnknownError,
 } from '../errors';
