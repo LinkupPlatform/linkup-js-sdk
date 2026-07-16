@@ -11,6 +11,7 @@ import {
   LinkupNoResultError,
   LinkupPaymentRequiredError,
   LinkupTaskNotFoundError,
+  LinkupTaskTypeNotSupportedError,
   LinkupTasksQueueLimitExceededError,
   LinkupTooManyRequestsError,
   LinkupUnknownError,
@@ -839,9 +840,8 @@ describe('LinkupClient', () => {
       },
       {
         description: '403 TASK_TYPE_NOT_SUPPORTED',
-        ErrorClass: LinkupUnknownError,
-        expectedMessage:
-          'Unsupported task type: Extract tasks are not enabled for this organization.',
+        ErrorClass: LinkupTaskTypeNotSupportedError,
+        expectedMessage: 'Extract tasks are not enabled for this organization.',
         input: {
           error: {
             code: 'TASK_TYPE_NOT_SUPPORTED',

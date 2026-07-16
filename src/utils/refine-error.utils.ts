@@ -11,6 +11,7 @@ import {
   LinkupNoResultError,
   LinkupPaymentRequiredError,
   LinkupTaskNotFoundError,
+  LinkupTaskTypeNotSupportedError,
   LinkupTasksQueueLimitExceededError,
   LinkupTooManyRequestsError,
   LinkupUnknownError,
@@ -59,7 +60,7 @@ export const refineError = (e: LinkupApiError): LinkupError => {
     case 403:
       switch (code) {
         case 'TASK_TYPE_NOT_SUPPORTED':
-          return new LinkupUnknownError(`Unsupported task type: ${message}`);
+          return new LinkupTaskTypeNotSupportedError(message);
         default:
           return new LinkupAuthenticationError(message);
       }
