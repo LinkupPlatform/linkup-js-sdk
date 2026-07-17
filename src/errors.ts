@@ -59,6 +59,19 @@ export class LinkupTaskNotFoundError extends LinkupError {
   }
 }
 
+// Task type not supported error, raised when the Linkup API returns a 403 status code.
+// It is returned when a task type is not enabled for the current organization.
+export class LinkupTaskTypeNotSupportedError extends LinkupError {
+  constructor(message?: string) {
+    super(message);
+    this.name = LinkupTaskTypeNotSupportedError.name;
+
+    if ('captureStackTrace' in Error) {
+      Error.captureStackTrace(this, LinkupTaskTypeNotSupportedError);
+    }
+  }
+}
+
 // Insufficient credit error, raised when the Linkup API returns a 429 status code.
 // It is returned when you have run out of credits.
 export class LinkupInsufficientCreditError extends LinkupError {
