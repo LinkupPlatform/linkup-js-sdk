@@ -160,6 +160,17 @@ export class LinkupFetchResponseTooLargeError extends LinkupError {
   }
 }
 
+export class LinkupFetchTargetUnreachableError extends LinkupError {
+  constructor(message?: string) {
+    super(message);
+    this.name = LinkupFetchTargetUnreachableError.name;
+
+    if ('captureStackTrace' in Error) {
+      Error.captureStackTrace(this, LinkupFetchTargetUnreachableError);
+    }
+  }
+}
+
 export class LinkupFetchUnsupportedContentTypeError extends LinkupError {
   constructor(message?: string) {
     super(message);

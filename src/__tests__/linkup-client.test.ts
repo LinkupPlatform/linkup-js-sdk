@@ -5,6 +5,7 @@ import {
   LinkupBudgetLimitExceededError,
   LinkupFetchError,
   LinkupFetchResponseTooLargeError,
+  LinkupFetchTargetUnreachableError,
   LinkupFetchUnsupportedContentTypeError,
   LinkupInsufficientCreditError,
   LinkupInvalidRequestError,
@@ -794,6 +795,19 @@ describe('LinkupClient', () => {
             code: 'FETCH_RESPONSE_TOO_LARGE',
             details: [],
             message: 'The fetched response is too large',
+          },
+          statusCode: 400,
+        },
+      },
+      {
+        description: '400 FETCH_TARGET_UNREACHABLE',
+        ErrorClass: LinkupFetchTargetUnreachableError,
+        expectedMessage: 'The target URL could not be reached (connection failed or timed out)',
+        input: {
+          error: {
+            code: 'FETCH_TARGET_UNREACHABLE',
+            details: [],
+            message: 'The target URL could not be reached (connection failed or timed out)',
           },
           statusCode: 400,
         },
