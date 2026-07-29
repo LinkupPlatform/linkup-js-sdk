@@ -629,7 +629,13 @@ describe('LinkupClient', () => {
           createdAt: '2026-05-18T00:00:00.000Z',
           error: null,
           id: 'task-456',
-          input: { depth: 'deep', outputType: 'sourcedAnswer', q: 'hello' },
+          input: {
+            depth: 'deep',
+            includeInlineCitations: true,
+            includeSources: false,
+            outputType: 'sourcedAnswer',
+            q: 'hello',
+          },
           output: { answer: 'world', sources: [] },
           status: 'completed',
           type: 'search',
@@ -643,6 +649,8 @@ describe('LinkupClient', () => {
       expect(result.type).toBe('search');
       if (result.type === 'search') {
         expect(result.input.query).toBe('hello');
+        expect(result.input.includeInlineCitations).toBe(true);
+        expect(result.input.includeSources).toBe(false);
       }
     });
 
@@ -806,12 +814,12 @@ describe('LinkupClient', () => {
       {
         description: '400 FETCH_ERROR',
         ErrorClass: LinkupFetchError,
-        expectedMessage: 'Failed to fetch the content from the URL',
+        expectedMessage: 'An error occurred while fetching the URL',
         input: {
           error: {
             code: 'FETCH_ERROR',
             details: [],
-            message: 'Failed to fetch the content from the URL',
+            message: 'An error occurred while fetching the URL',
           },
           statusCode: 400,
         },
