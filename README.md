@@ -95,7 +95,10 @@ You can use the fetch endpoint to retrieve the content of a given URL in clean `
 
 Use `renderJs` to execute the JavaScript code of the page before returning the content.
 
-Use `includeRawHtml` to get the raw HTML of the page.
+Use `includeRawContent` to get the raw page content together with its `contentType`.
+
+`includeRawHtml` remains available for backward compatibility, but the Linkup API now prefers
+`includeRawContent`.
 
 Use `extractImages` to get an extracted list of images from the page.
 
@@ -110,6 +113,7 @@ const client = new LinkupClient({
 
 const fetchLinkup = async () => client.fetch({
   url: 'https://docs.linkup.so',
+  includeRawContent: true,
   renderJs: true,
 });
 
