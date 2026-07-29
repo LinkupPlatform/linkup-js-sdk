@@ -150,6 +150,8 @@ type BaseTaskInput = {
 
 export type SearchTaskInput = BaseTaskInput & {
   includeImages?: boolean;
+  includeInlineCitations?: boolean;
+  includeSources?: boolean;
   maxResults?: number;
   depth: SearchDepth;
 } & (
@@ -157,11 +159,9 @@ export type SearchTaskInput = BaseTaskInput & {
         outputType: 'searchResults';
       }
     | {
-        includeInlineCitations?: boolean;
         outputType: 'sourcedAnswer';
       }
     | {
-        includeSources?: boolean;
         outputType: 'structured';
         structuredOutputSchema: Structured;
       }
