@@ -368,6 +368,32 @@ describe('LinkupClient', () => {
       expect(result).toEqual({ markdown: 'Content', rawHtml: '<h1>Title</h1><p>Content</p>' });
     });
 
+    it('should make a successful fetch API call including raw content', async () => {
+      const mockResponse = {
+        data: {
+          contentType: 'html',
+          markdown: 'Content',
+          rawContent: '<!DOCTYPE html><html><body>Content</body></html>',
+        },
+      };
+      mockAxiosInstance.post.mockResolvedValueOnce(mockResponse as AxiosResponse);
+
+      const result = await underTest.fetch({
+        includeRawContent: true,
+        url: 'https://example.com',
+      });
+
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/fetch', {
+        includeRawContent: true,
+        url: 'https://example.com',
+      });
+      expect(result).toEqual({
+        contentType: 'html',
+        markdown: 'Content',
+        rawContent: '<!DOCTYPE html><html><body>Content</body></html>',
+      });
+    });
+
     it('should handle fetch with renderJS parameter', async () => {
       const mockResponse = { data: { markdown: 'Fetched content' } };
       mockAxiosInstance.post.mockResolvedValueOnce(mockResponse as AxiosResponse);
@@ -534,6 +560,7 @@ describe('LinkupClient', () => {
             error: null,
             id: 'c4ea3d1d-764d-4b88-95d0-5328596c4efa',
             input: {
+              includeRawContent: true,
               url: 'https://example.com',
             },
             output: null,
@@ -555,6 +582,7 @@ describe('LinkupClient', () => {
         },
         {
           input: {
+            includeRawContent: true,
             url: 'https://example.com',
           },
           type: 'fetch',
@@ -572,6 +600,7 @@ describe('LinkupClient', () => {
         },
         {
           input: {
+            includeRawContent: true,
             url: 'https://example.com',
           },
           type: 'fetch',
@@ -587,6 +616,7 @@ describe('LinkupClient', () => {
       });
       expect(result[1]).toMatchObject({
         input: {
+          includeRawContent: true,
           url: 'https://example.com',
         },
         type: 'fetch',
