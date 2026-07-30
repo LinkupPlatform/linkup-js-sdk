@@ -18,7 +18,10 @@ export type ApiConfig = ApiKeyConfig | X402Config;
 
 export type Structured = Record<string, unknown>;
 
-export type StructuredInputSchema = Structured | string | ZodObject<ZodRawShape>;
+export type StructuredInputSchema =
+  | (Structured & { type: 'object' })
+  | string
+  | ZodObject<ZodRawShape>;
 
 export type FetchImage = {
   alt: string;
@@ -118,10 +121,11 @@ export type FetchParams = {
 };
 
 export type LinkupFetchResponse<T extends FetchParams = FetchParams> = {
+  contentType?: string;
   markdown: string;
-} & ConditionalProp<T['includeRawContent'], { rawContent: string; contentType?: string }> &
-  ConditionalProp<T['includeRawHtml'], { rawHtml: string }> &
-  ConditionalProp<T['extractImages'], { images: FetchImage[] }>;
+} & ConditionalProp<T['includeRawContent'], { rawContent?: string }> &
+  ConditionalProp<T['includeRawHtml'], { rawHtml?: string }> &
+  ConditionalProp<T['extractImages'], { images?: FetchImage[] }>;
 
 export type ResearchParams = BaseSearchRequestParams &
   (
@@ -145,13 +149,13 @@ type BaseTaskInput = {
   fromDate?: string;
   includeDomains?: string[];
   structuredOutputSchema?: Structured;
-  toDate?: string;
+  toDate: string;
 };
 
 export type SearchTaskInput = BaseTaskInput & {
-  includeImages?: boolean;
-  includeInlineCitations?: boolean;
-  includeSources?: boolean;
+  includeImages: boolean;
+  includeInlineCitations: boolean;
+  includeSources: boolean;
   maxResults?: number;
   depth: SearchDepth;
 } & (
@@ -168,8 +172,8 @@ export type SearchTaskInput = BaseTaskInput & {
   );
 
 export type ResearchTaskInput = BaseTaskInput & {
-  mode?: ResearchMode;
-  reasoningDepth?: ResearchReasoningDepth;
+  mode: ResearchMode;
+  reasoningDepth: ResearchReasoningDepth;
 } & (
     | {
         outputType: 'sourcedAnswer';
@@ -211,7 +215,16 @@ export type FetchTaskOutput = {
   rawHtml?: string;
 };
 
-export type FetchTask = TaskBase<'fetch', FetchParams, FetchTaskOutput>;
+export type FetchTaskInput = {
+  extractImages: boolean;
+  includeRawContent: boolean;
+  /** @deprecated Use includeRawContent instead. */
+  includeRawHtml: boolean;
+  renderJs: boolean;
+  url: string;
+};
+
+export type FetchTask = TaskBase<'fetch', FetchTaskInput, FetchTaskOutput>;
 
 export type ResearchTask = TaskBase<'research', ResearchTaskInput, ResearchResult>;
 

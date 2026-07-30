@@ -119,7 +119,7 @@ describe('LinkupClient', () => {
         includeSources: false,
         outputType: 'structured',
         query: 'foo',
-        structuredOutputSchema: { type: 'string' },
+        structuredOutputSchema: { properties: { value: { type: 'string' } }, type: 'object' },
         toDate: '2026-05-31',
       });
 
@@ -130,8 +130,33 @@ describe('LinkupClient', () => {
         includeSources: false,
         outputType: 'structured',
         q: 'foo',
-        structuredOutputSchema: JSON.stringify({ type: 'string' }),
+        structuredOutputSchema: JSON.stringify({
+          properties: { value: { type: 'string' } },
+          type: 'object',
+        }),
         toDate: '2026-05-31',
+      });
+    });
+
+    it('should forward empty date strings for API validation', async () => {
+      mockAxiosInstance.post.mockResolvedValueOnce({
+        data: { results: [] },
+      } as AxiosResponse);
+
+      await underTest.search({
+        depth: 'standard',
+        fromDate: '',
+        outputType: 'searchResults',
+        query: 'foo',
+        toDate: '',
+      });
+
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/search', {
+        depth: 'standard',
+        fromDate: '',
+        outputType: 'searchResults',
+        q: 'foo',
+        toDate: '',
       });
     });
 
@@ -267,7 +292,7 @@ describe('LinkupClient', () => {
         depth: 'standard',
         outputType: 'structured',
         query: 'foo',
-        structuredOutputSchema: { type: 'string' },
+        structuredOutputSchema: { properties: { value: { type: 'string' } }, type: 'object' },
       });
 
       expect(result).toEqual({ type: 'foo' });
@@ -296,7 +321,7 @@ describe('LinkupClient', () => {
         includeSources: true,
         outputType: 'structured',
         query: 'foo',
-        structuredOutputSchema: { type: 'string' },
+        structuredOutputSchema: { properties: { value: { type: 'string' } }, type: 'object' },
       });
 
       expect(result).toEqual({
@@ -394,6 +419,21 @@ describe('LinkupClient', () => {
       });
     });
 
+    it('should allow requested raw content to be absent from the response', async () => {
+      mockAxiosInstance.post.mockResolvedValueOnce({
+        data: { markdown: 'Content' },
+      } as AxiosResponse);
+
+      const result = await underTest.fetch({
+        includeRawContent: true,
+        url: 'https://example.com',
+      });
+
+      expect(result).toEqual({ markdown: 'Content' });
+      expect(result.rawContent).toBeUndefined();
+      expect(result.contentType).toBeUndefined();
+    });
+
     it('should handle fetch with renderJS parameter', async () => {
       const mockResponse = { data: { markdown: 'Fetched content' } };
       mockAxiosInstance.post.mockResolvedValueOnce(mockResponse as AxiosResponse);
@@ -445,6 +485,40 @@ describe('LinkupClient', () => {
   });
 
   describe('research methods', () => {
+    it('should forward empty date strings for API validation', async () => {
+      mockAxiosInstance.post.mockResolvedValueOnce({
+        data: {
+          createdAt: '2026-05-18T00:00:00.000Z',
+          error: null,
+          id: '2dbcc4bb-2c0d-4bcb-aaf5-44f7cbcf4eee',
+          input: {
+            mode: 'auto',
+            outputType: 'sourcedAnswer',
+            q: 'What changed?',
+            reasoningDepth: 'L',
+          },
+          output: null,
+          status: 'pending',
+          type: 'research',
+          updatedAt: '2026-05-18T00:00:00.000Z',
+        },
+      } as AxiosResponse);
+
+      await underTest.research({
+        fromDate: '',
+        outputType: 'sourcedAnswer',
+        query: 'What changed?',
+        toDate: '',
+      });
+
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/research', {
+        fromDate: '',
+        outputType: 'sourcedAnswer',
+        q: 'What changed?',
+        toDate: '',
+      });
+    });
+
     it('should create a research task and normalize the returned input', async () => {
       mockAxiosInstance.post.mockResolvedValueOnce({
         data: {
