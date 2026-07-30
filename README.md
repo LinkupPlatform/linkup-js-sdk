@@ -55,11 +55,10 @@ All search queries can be used with three depth modes:
 - with beta `fast` `depth`, the search is optimized for the quickest turnaround on lightweight
   queries
 
-- with `standard` `depth`, the search will be straightforward and fast, suited for relatively simple
-  queries (e.g. "What's the weather in Paris today?")
-- with `deep` `depth`, the search will use an agentic workflow, which makes it in general slower,
-  but it will be able to solve more complex queries (e.g. "What is the company profile of LangChain
-  accross the last few years, and how does it compare to its concurrents?")
+- with `standard` `depth`, the search uses an agentic workflow to handle broader queries across
+  multiple topics or sources while remaining fast
+- with `deep` `depth`, the search performs several agentic iterations for comprehensive coverage,
+  making it slower but better suited to complex queries
 
 You can also refine search requests with:
 
@@ -68,6 +67,8 @@ You can also refine search requests with:
 - `maxResults` to cap the number of returned results
 - `includeInlineCitations` for `sourcedAnswer` output
 - `includeSources` for `structured` output responses
+
+Structured output schemas must use an object at their root (`type: 'object'`).
 
 #### 📝 Example standard search query
 
@@ -95,7 +96,7 @@ You can use the fetch endpoint to retrieve the content of a given URL in clean `
 
 Use `renderJs` to execute the JavaScript code of the page before returning the content.
 
-Use `includeRawContent` to get the raw page content together with its `contentType`.
+Use `includeRawContent` to get the raw page content together with its `contentType` when available.
 
 `includeRawHtml` remains available for backward compatibility, but the Linkup API now prefers
 `includeRawContent`.
@@ -198,8 +199,9 @@ console.log(queued.quota);
 
 ### 💳 X402 Payment Protocol
 
-The SDK supports the [X402 payment protocol](https://www.x402.org/), allowing you to pay for API
-calls with on-chain transactions instead of an API key.
+The SDK supports the [X402 payment protocol](https://www.x402.org/) for direct `search`, `fetch`, and
+research creation calls, allowing you to pay with on-chain transactions instead of an API key.
+Task methods and research read/list methods require an API key.
 
 #### Prerequisites
 

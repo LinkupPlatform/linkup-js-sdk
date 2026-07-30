@@ -165,8 +165,8 @@ export class LinkupClient {
       ...(includeImages !== undefined && { includeImages }),
       ...(includeDomains && { includeDomains }),
       ...(excludeDomains && { excludeDomains }),
-      ...(fromDate && { fromDate: this.serializeDate(fromDate) }),
-      ...(toDate && { toDate: this.serializeDate(toDate) }),
+      ...(fromDate !== undefined && { fromDate: this.serializeDate(fromDate) }),
+      ...(toDate !== undefined && { toDate: this.serializeDate(toDate) }),
       ...(maxResults !== undefined && { maxResults }),
     };
 
@@ -204,8 +204,8 @@ export class LinkupClient {
       q: query,
       ...(includeDomains && { includeDomains }),
       ...(excludeDomains && { excludeDomains }),
-      ...(fromDate && { fromDate: this.serializeDate(fromDate) }),
-      ...(toDate && { toDate: this.serializeDate(toDate) }),
+      ...(fromDate !== undefined && { fromDate: this.serializeDate(fromDate) }),
+      ...(toDate !== undefined && { toDate: this.serializeDate(toDate) }),
       ...(mode !== undefined && { mode }),
       ...(reasoningDepth !== undefined && { reasoningDepth }),
     };
