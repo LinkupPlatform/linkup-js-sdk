@@ -46,6 +46,19 @@ export class LinkupAuthenticationError extends Error {
   }
 }
 
+// IP not whitelisted error, raised when the Linkup API returns an IP_NOT_WHITELISTED error.
+// It is returned when the request IP is not allowed by the API key's IP whitelist.
+export class LinkupIpNotWhitelistedError extends LinkupError {
+  constructor(message?: string) {
+    super(message);
+    this.name = LinkupIpNotWhitelistedError.name;
+
+    if ('captureStackTrace' in Error) {
+      Error.captureStackTrace(this, LinkupIpNotWhitelistedError);
+    }
+  }
+}
+
 // Task not found error, raised when the Linkup API returns a 404 status code.
 // It is returned when a task or research task does not exist.
 export class LinkupTaskNotFoundError extends LinkupError {

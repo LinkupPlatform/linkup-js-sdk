@@ -9,6 +9,7 @@ import {
   LinkupFetchUnsupportedContentTypeError,
   LinkupInsufficientCreditError,
   LinkupInvalidRequestError,
+  LinkupIpNotWhitelistedError,
   LinkupNoResultError,
   LinkupPaymentRequiredError,
   LinkupTaskNotFoundError,
@@ -961,6 +962,19 @@ describe('LinkupClient', () => {
         expectedMessage: 'Forbidden action',
         input: {
           error: { code: 'FORBIDDEN', details: [], message: 'Forbidden action' },
+          statusCode: 403,
+        },
+      },
+      {
+        description: '403 IP_NOT_WHITELISTED',
+        ErrorClass: LinkupIpNotWhitelistedError,
+        expectedMessage: 'IP address 192.0.2.1 is not whitelisted',
+        input: {
+          error: {
+            code: 'IP_NOT_WHITELISTED',
+            details: [],
+            message: 'IP address 192.0.2.1 is not whitelisted',
+          },
           statusCode: 403,
         },
       },
