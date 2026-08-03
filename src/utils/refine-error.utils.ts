@@ -9,6 +9,7 @@ import {
   LinkupFetchUnsupportedContentTypeError,
   LinkupInsufficientCreditError,
   LinkupInvalidRequestError,
+  LinkupIpNotWhitelistedError,
   LinkupNoResultError,
   LinkupPaymentRequiredError,
   LinkupTaskNotFoundError,
@@ -62,6 +63,8 @@ export const refineError = (e: LinkupApiError): LinkupError => {
       return new LinkupAuthenticationError(message);
     case 403:
       switch (code) {
+        case 'IP_NOT_WHITELISTED':
+          return new LinkupIpNotWhitelistedError(message);
         case 'TASK_TYPE_NOT_SUPPORTED':
           return new LinkupTaskTypeNotSupportedError(message);
         default:
