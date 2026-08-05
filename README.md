@@ -92,7 +92,8 @@ askLinkup()
 
 ### ⬇️ Fetch Endpoint
 
-You can use the fetch endpoint to retrieve the content of a given URL in clean `markdown` format.
+You can use the fetch endpoint to retrieve the content of a given URL in clean `markdown` format,
+together with the website's `favicon` URL.
 
 Use `renderJs` to execute the JavaScript code of the page before returning the content.
 

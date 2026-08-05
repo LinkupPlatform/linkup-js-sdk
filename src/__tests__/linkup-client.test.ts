@@ -363,7 +363,9 @@ describe('LinkupClient', () => {
 
   describe('fetch method', () => {
     it('should make a successful fetch API call', async () => {
-      const mockResponse = { data: { markdown: 'Content' } };
+      const mockResponse = {
+        data: { favicon: 'https://favicons.linkup.so?domain=example.com', markdown: 'Content' },
+      };
       mockAxiosInstance.post.mockResolvedValueOnce(mockResponse as AxiosResponse);
 
       const result = await underTest.fetch({
@@ -373,12 +375,19 @@ describe('LinkupClient', () => {
       expect(mockAxiosInstance.post).toHaveBeenCalledWith('/fetch', {
         url: 'https://example.com',
       });
-      expect(result).toEqual({ markdown: 'Content' });
+      expect(result).toEqual({
+        favicon: 'https://favicons.linkup.so?domain=example.com',
+        markdown: 'Content',
+      });
     });
 
     it('should make a successful fetch API call including raw HTML', async () => {
       const mockResponse = {
-        data: { markdown: 'Content', rawHtml: '<h1>Title</h1><p>Content</p>' },
+        data: {
+          favicon: 'https://favicons.linkup.so?domain=example.com',
+          markdown: 'Content',
+          rawHtml: '<h1>Title</h1><p>Content</p>',
+        },
       };
       mockAxiosInstance.post.mockResolvedValueOnce(mockResponse as AxiosResponse);
 
@@ -391,13 +400,18 @@ describe('LinkupClient', () => {
         includeRawHtml: true,
         url: 'https://example.com',
       });
-      expect(result).toEqual({ markdown: 'Content', rawHtml: '<h1>Title</h1><p>Content</p>' });
+      expect(result).toEqual({
+        favicon: 'https://favicons.linkup.so?domain=example.com',
+        markdown: 'Content',
+        rawHtml: '<h1>Title</h1><p>Content</p>',
+      });
     });
 
     it('should make a successful fetch API call including raw content', async () => {
       const mockResponse = {
         data: {
           contentType: 'html',
+          favicon: 'https://favicons.linkup.so?domain=example.com',
           markdown: 'Content',
           rawContent: '<!DOCTYPE html><html><body>Content</body></html>',
         },
@@ -415,6 +429,7 @@ describe('LinkupClient', () => {
       });
       expect(result).toEqual({
         contentType: 'html',
+        favicon: 'https://favicons.linkup.so?domain=example.com',
         markdown: 'Content',
         rawContent: '<!DOCTYPE html><html><body>Content</body></html>',
       });
@@ -422,7 +437,10 @@ describe('LinkupClient', () => {
 
     it('should allow requested raw content to be absent from the response', async () => {
       mockAxiosInstance.post.mockResolvedValueOnce({
-        data: { markdown: 'Content' },
+        data: {
+          favicon: 'https://favicons.linkup.so?domain=example.com',
+          markdown: 'Content',
+        },
       } as AxiosResponse);
 
       const result = await underTest.fetch({
@@ -430,13 +448,21 @@ describe('LinkupClient', () => {
         url: 'https://example.com',
       });
 
-      expect(result).toEqual({ markdown: 'Content' });
+      expect(result).toEqual({
+        favicon: 'https://favicons.linkup.so?domain=example.com',
+        markdown: 'Content',
+      });
       expect(result.rawContent).toBeUndefined();
       expect(result.contentType).toBeUndefined();
     });
 
     it('should handle fetch with renderJS parameter', async () => {
-      const mockResponse = { data: { markdown: 'Fetched content' } };
+      const mockResponse = {
+        data: {
+          favicon: 'https://favicons.linkup.so?domain=example.com',
+          markdown: 'Fetched content',
+        },
+      };
       mockAxiosInstance.post.mockResolvedValueOnce(mockResponse as AxiosResponse);
 
       await underTest.fetch({
@@ -453,6 +479,7 @@ describe('LinkupClient', () => {
     it('should handle fetch with extractImages parameter', async () => {
       const mockResponse = {
         data: {
+          favicon: 'https://favicons.linkup.so?domain=example.com',
           images: [
             {
               alt: 'Image 1',
@@ -474,6 +501,7 @@ describe('LinkupClient', () => {
         url: 'https://example.com',
       });
       expect(result).toEqual({
+        favicon: 'https://favicons.linkup.so?domain=example.com',
         images: [
           {
             alt: 'Image 1',

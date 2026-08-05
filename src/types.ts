@@ -122,6 +122,7 @@ export type FetchParams = {
 
 export type LinkupFetchResponse<T extends FetchParams = FetchParams> = {
   contentType?: string;
+  favicon: string;
   markdown: string;
 } & ConditionalProp<T['includeRawContent'], { rawContent?: string }> &
   ConditionalProp<T['includeRawHtml'], { rawHtml?: string }> &
@@ -209,6 +210,7 @@ export type SearchTask = TaskBase<
 export type FetchTaskOutput = {
   markdown: string;
   contentType?: string;
+  favicon: string;
   images?: FetchImage[];
   rawContent?: string;
   /** @deprecated Use rawContent instead. */
