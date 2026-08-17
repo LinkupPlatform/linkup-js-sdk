@@ -476,6 +476,25 @@ describe('LinkupClient', () => {
       });
     });
 
+    it('should handle fetch with pro mode', async () => {
+      mockAxiosInstance.post.mockResolvedValueOnce({
+        data: {
+          favicon: 'https://favicons.linkup.so?domain=example.com',
+          markdown: 'Fetched content',
+        },
+      } as AxiosResponse);
+
+      await underTest.fetch({
+        mode: 'pro',
+        url: 'https://example.com',
+      });
+
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/fetch', {
+        mode: 'pro',
+        url: 'https://example.com',
+      });
+    });
+
     it('should handle fetch with extractImages parameter', async () => {
       const mockResponse = {
         data: {
@@ -664,6 +683,7 @@ describe('LinkupClient', () => {
             id: 'c4ea3d1d-764d-4b88-95d0-5328596c4efa',
             input: {
               includeRawContent: true,
+              mode: 'pro',
               url: 'https://example.com',
             },
             output: null,
@@ -686,6 +706,7 @@ describe('LinkupClient', () => {
         {
           input: {
             includeRawContent: true,
+            mode: 'pro',
             url: 'https://example.com',
           },
           type: 'fetch',
@@ -704,6 +725,7 @@ describe('LinkupClient', () => {
         {
           input: {
             includeRawContent: true,
+            mode: 'pro',
             url: 'https://example.com',
           },
           type: 'fetch',
@@ -720,6 +742,7 @@ describe('LinkupClient', () => {
       expect(result[1]).toMatchObject({
         input: {
           includeRawContent: true,
+          mode: 'pro',
           url: 'https://example.com',
         },
         type: 'fetch',

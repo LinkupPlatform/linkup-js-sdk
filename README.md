@@ -104,6 +104,9 @@ Use `includeRawContent` to get the raw page content together with its `contentTy
 
 Use `extractImages` to get an extracted list of images from the page.
 
+Set `mode` to `pro` for significantly higher success rates on hard-to-retrieve pages. It defaults
+to `standard`.
+
 #### 📝 Example
 
 ```typescript
@@ -116,6 +119,7 @@ const client = new LinkupClient({
 const fetchLinkup = async () => client.fetch({
   url: 'https://docs.linkup.so',
   includeRawContent: true,
+  mode: 'pro',
   renderJs: true,
 });
 

@@ -3,6 +3,7 @@ import { ZodObject, ZodRawShape } from 'zod';
 import type { X402Signer } from './x402/types';
 
 export type SearchDepth = 'standard' | 'deep' | 'fast';
+export type FetchMode = 'standard' | 'pro';
 export type ResearchMode = 'answer' | 'auto' | 'investigate' | 'research';
 export type ResearchReasoningDepth = 'S' | 'M' | 'L' | 'XL';
 export type TaskStatus = 'pending' | 'processing' | 'completed' | 'failed';
@@ -113,6 +114,7 @@ export type LinkupApiError = {
 
 export type FetchParams = {
   url: string;
+  mode?: FetchMode;
   renderJs?: boolean;
   includeRawContent?: boolean;
   /** @deprecated Use includeRawContent instead. */
@@ -222,6 +224,7 @@ export type FetchTaskInput = {
   includeRawContent: boolean;
   /** @deprecated Use includeRawContent instead. */
   includeRawHtml: boolean;
+  mode: FetchMode;
   renderJs: boolean;
   url: string;
 };
