@@ -5,6 +5,7 @@ import {
   LinkupError,
   LinkupFetchError,
   LinkupFetchResponseTooLargeError,
+  LinkupFetchTargetNotFoundError,
   LinkupFetchTargetUnreachableError,
   LinkupFetchUnsupportedContentTypeError,
   LinkupInsufficientCreditError,
@@ -48,6 +49,8 @@ export const refineError = (e: LinkupApiError): LinkupError => {
           return new LinkupFetchError(message);
         case 'FETCH_RESPONSE_TOO_LARGE':
           return new LinkupFetchResponseTooLargeError(message);
+        case 'FETCH_TARGET_NOT_FOUND':
+          return new LinkupFetchTargetNotFoundError(message);
         case 'FETCH_TARGET_UNREACHABLE':
           return new LinkupFetchTargetUnreachableError(message);
         case 'FETCH_UNSUPPORTED_CONTENT_TYPE':

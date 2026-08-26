@@ -173,6 +173,17 @@ export class LinkupFetchResponseTooLargeError extends LinkupError {
   }
 }
 
+export class LinkupFetchTargetNotFoundError extends LinkupError {
+  constructor(message?: string) {
+    super(message);
+    this.name = LinkupFetchTargetNotFoundError.name;
+
+    if ('captureStackTrace' in Error) {
+      Error.captureStackTrace(this, LinkupFetchTargetNotFoundError);
+    }
+  }
+}
+
 export class LinkupFetchTargetUnreachableError extends LinkupError {
   constructor(message?: string) {
     super(message);
