@@ -5,6 +5,7 @@ import {
   LinkupBudgetLimitExceededError,
   LinkupFetchError,
   LinkupFetchResponseTooLargeError,
+  LinkupFetchTargetNotFoundError,
   LinkupFetchTargetUnreachableError,
   LinkupFetchUnsupportedContentTypeError,
   LinkupInsufficientCreditError,
@@ -959,6 +960,19 @@ describe('LinkupClient', () => {
             code: 'FETCH_RESPONSE_TOO_LARGE',
             details: [],
             message: 'The fetched response is too large',
+          },
+          statusCode: 400,
+        },
+      },
+      {
+        description: '400 FETCH_TARGET_NOT_FOUND',
+        ErrorClass: LinkupFetchTargetNotFoundError,
+        expectedMessage: 'The target URL was not found',
+        input: {
+          error: {
+            code: 'FETCH_TARGET_NOT_FOUND',
+            details: [],
+            message: 'The target URL was not found',
           },
           statusCode: 400,
         },
