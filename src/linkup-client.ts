@@ -62,7 +62,9 @@ export class LinkupClient {
   }
 
   async fetch<T extends FetchParams>(params: T): Promise<LinkupFetchResponse<T>> {
-    return this.client.post('/fetch', params).then(response => response.data);
+    return this.client
+      .post('/fetch', this.sanitizeFetchParams(params))
+      .then(response => response.data);
   }
 
   async research(params: ResearchParams): Promise<ResearchTask> {
@@ -219,6 +221,30 @@ export class LinkupClient {
     return result;
   }
 
+  private sanitizeFetchParams(params: FetchParams): SanitizedParams {
+    const {
+      url,
+      mode,
+      renderJs,
+      includeRawContent,
+      includeRawHtml,
+      extractImages,
+      schema,
+      instructions,
+    } = params;
+
+    return {
+      url,
+      ...(mode !== undefined && { mode }),
+      ...(renderJs !== undefined && { renderJs }),
+      ...(includeRawContent !== undefined && { includeRawContent }),
+      ...(includeRawHtml !== undefined && { includeRawHtml }),
+      ...(extractImages !== undefined && { extractImages }),
+      ...(schema !== undefined && { schema: this.serializeStructuredOutputSchema(schema) }),
+      ...(instructions !== undefined && { instructions }),
+    };
+  }
+
   private serializeStructuredOutputSchema(schema: StructuredInputSchema): string {
     if (typeof schema === 'string') {
       return schema;
@@ -244,7 +270,10 @@ export class LinkupClient {
           type: task.type,
         };
       case 'fetch':
-        return task;
+        return {
+          input: this.sanitizeFetchParams(task.input),
+          type: task.type,
+        };
       case 'research':
         return {
           input: this.sanitizeResearchParams(task.input),

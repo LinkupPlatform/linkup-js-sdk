@@ -112,7 +112,7 @@ export type LinkupApiError = {
   };
 };
 
-export type FetchParams = {
+type BaseFetchParams = {
   url: string;
   mode?: FetchMode;
   renderJs?: boolean;
@@ -122,8 +122,21 @@ export type FetchParams = {
   extractImages?: boolean;
 };
 
+export type FetchParams = BaseFetchParams &
+  (
+    | {
+        schema: StructuredInputSchema;
+        instructions?: string;
+      }
+    | {
+        schema?: never;
+        instructions?: never;
+      }
+  );
+
 export type LinkupFetchResponse<T extends FetchParams = FetchParams> = {
   contentType?: string;
+  data?: Structured;
   favicon: string;
   markdown: string;
 } & ConditionalProp<T['includeRawContent'], { rawContent?: string }> &
@@ -212,6 +225,7 @@ export type SearchTask = TaskBase<
 export type FetchTaskOutput = {
   markdown: string;
   contentType?: string;
+  data?: Structured;
   favicon: string;
   images?: FetchImage[];
   rawContent?: string;
@@ -224,8 +238,10 @@ export type FetchTaskInput = {
   includeRawContent: boolean;
   /** @deprecated Use includeRawContent instead. */
   includeRawHtml: boolean;
+  instructions?: string;
   mode: FetchMode;
   renderJs: boolean;
+  schema?: Structured;
   url: string;
 };
 

@@ -531,6 +531,29 @@ describe('LinkupClient', () => {
         markdown: 'Fetched content',
       });
     });
+
+    it('should serialize a fetch schema and return structured data', async () => {
+      mockAxiosInstance.post.mockResolvedValueOnce({
+        data: {
+          data: { name: 'Example product', price: 49 },
+          favicon: 'https://favicons.linkup.so?domain=example.com',
+          markdown: 'Example product costs $49.',
+        },
+      } as AxiosResponse);
+
+      const result = await underTest.fetch({
+        instructions: 'Use public list prices only.',
+        schema: z.object({ name: z.string(), price: z.number() }),
+        url: 'https://example.com',
+      });
+
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/fetch', {
+        instructions: 'Use public list prices only.',
+        schema: expect.stringContaining('"name":{"type":"string"}'),
+        url: 'https://example.com',
+      });
+      expect(result.data).toEqual({ name: 'Example product', price: 49 });
+    });
   });
 
   describe('research methods', () => {
@@ -707,7 +730,9 @@ describe('LinkupClient', () => {
         {
           input: {
             includeRawContent: true,
+            instructions: 'Extract the product name.',
             mode: 'pro',
+            schema: { properties: { name: { type: 'string' } }, type: 'object' },
             url: 'https://example.com',
           },
           type: 'fetch',
@@ -726,7 +751,9 @@ describe('LinkupClient', () => {
         {
           input: {
             includeRawContent: true,
+            instructions: 'Extract the product name.',
             mode: 'pro',
+            schema: expect.stringContaining('"name":{"type":"string"}'),
             url: 'https://example.com',
           },
           type: 'fetch',
