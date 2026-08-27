@@ -107,6 +107,9 @@ Use `extractImages` to get an extracted list of images from the page.
 Set `mode` to `pro` for significantly higher success rates on hard-to-retrieve pages. It defaults
 to `standard`.
 
+Pass an object JSON `schema` to extract structured `data`. Optional `instructions` can guide the
+extraction and require a schema.
+
 #### 📝 Example
 
 ```typescript
@@ -118,9 +121,13 @@ const client = new LinkupClient({
 
 const fetchLinkup = async () => client.fetch({
   url: 'https://docs.linkup.so',
-  includeRawContent: true,
-  mode: 'pro',
-  renderJs: true,
+  schema: {
+    type: 'object',
+    properties: {
+      title: { type: 'string' },
+    },
+  },
+  instructions: 'Extract the page title.',
 });
 
 fetchLinkup()
