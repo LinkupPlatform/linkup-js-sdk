@@ -115,7 +115,7 @@ describe('LinkupClient', () => {
       } as AxiosResponse);
 
       await underTest.search({
-        depth: 'standard',
+        depth: 'flash',
         fromDate: '2026-05-01',
         includeImages: false,
         includeSources: false,
@@ -126,7 +126,7 @@ describe('LinkupClient', () => {
       });
 
       expect(mockAxiosInstance.post).toHaveBeenCalledWith('/search', {
-        depth: 'standard',
+        depth: 'flash',
         fromDate: '2026-05-01',
         includeImages: false,
         includeSources: false,

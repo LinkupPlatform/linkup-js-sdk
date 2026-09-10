@@ -10,7 +10,7 @@ easy integration with Linkup's services.
 ## 🌟 Features
 
 - ✅ **Simple and intuitive API client.**
-- 🔍 **Supports `standard`, `deep`, and beta `fast` search depths.**
+- 🔍 **Supports `flash`, `fast`, `standard`, and `deep` search depths.**
 - 🧠 **Supports asynchronous research tasks and batched task workflows.**
 - 🔒 **Handles authentication and request management.**
 
@@ -50,15 +50,12 @@ const client = new LinkupClient({
 
 ### 📋 Search Endpoint
 
-All search queries can be used with three depth modes:
+All search queries can be used with four depth modes:
 
-- with beta `fast` `depth`, the search is optimized for the quickest turnaround on lightweight
-  queries
-
-- with `standard` `depth`, the search uses an agentic workflow to handle broader queries across
-  multiple topics or sources while remaining fast
-- with `deep` `depth`, the search performs several agentic iterations for comprehensive coverage,
-  making it slower but better suited to complex queries
+- `flash` is lowest latency: ranked sources and snippets in a few hundred milliseconds, built for low-latency use cases
+- `fast` is higher-quality one-shot retrieval in about a second, the recommended default for most agentic applications
+- `standard` is a single pass of agentic search for queries that span several topics or sources
+- `deep` runs several search iterations, optimizing for coverage and multi-hop agentic workflows.
 
 You can also refine search requests with:
 
