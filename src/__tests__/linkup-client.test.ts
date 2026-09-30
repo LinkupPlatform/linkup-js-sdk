@@ -13,6 +13,7 @@ import {
   LinkupIpNotWhitelistedError,
   LinkupNoResultError,
   LinkupPaymentRequiredError,
+  LinkupRequestDeadlineExceededError,
   LinkupTaskNotFoundError,
   LinkupTasksQueueLimitExceededError,
   LinkupTaskTypeNotSupportedError,
@@ -1158,6 +1159,19 @@ describe('LinkupClient', () => {
         input: {
           error: { code: 'INTERNAL_SERVER_ERROR', details: [], message: 'Internal server error' },
           statusCode: 500,
+        },
+      },
+      {
+        description: '504 REQUEST_DEADLINE_EXCEEDED',
+        ErrorClass: LinkupRequestDeadlineExceededError,
+        expectedMessage: 'Request deadline exceeded',
+        input: {
+          error: {
+            code: 'REQUEST_DEADLINE_EXCEEDED',
+            details: [],
+            message: 'Request deadline exceeded',
+          },
+          statusCode: 504,
         },
       },
     ])('should throw the correct error on $description', async ({

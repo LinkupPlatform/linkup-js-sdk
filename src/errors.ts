@@ -137,6 +137,18 @@ export class LinkupTooManyRequestsError extends LinkupError {
   }
 }
 
+// Request deadline exceeded error, raised when the Linkup API returns a 504 status code.
+export class LinkupRequestDeadlineExceededError extends LinkupError {
+  constructor(message?: string) {
+    super(message);
+    this.name = LinkupRequestDeadlineExceededError.name;
+
+    if ('captureStackTrace' in Error) {
+      Error.captureStackTrace(this, LinkupRequestDeadlineExceededError);
+    }
+  }
+}
+
 // Unknown error
 export class LinkupUnknownError extends LinkupError {
   constructor(message: string) {

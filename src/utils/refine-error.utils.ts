@@ -13,6 +13,7 @@ import {
   LinkupIpNotWhitelistedError,
   LinkupNoResultError,
   LinkupPaymentRequiredError,
+  LinkupRequestDeadlineExceededError,
   LinkupTaskNotFoundError,
   LinkupTasksQueueLimitExceededError,
   LinkupTaskTypeNotSupportedError,
@@ -93,6 +94,11 @@ export const refineError = (e: LinkupApiError): LinkupError => {
         default:
           return new LinkupUnknownError(`An unknown error occurred: ${error.message}`);
       }
+    case 504:
+      if (code === 'REQUEST_DEADLINE_EXCEEDED') {
+        return new LinkupRequestDeadlineExceededError(message);
+      }
+      return new LinkupUnknownError(`An unknown error occurred: ${error.message}`);
     default:
       return new LinkupUnknownError(`An unknown error occurred: ${error.message}`);
   }
