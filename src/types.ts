@@ -62,13 +62,15 @@ export type SearchParams = BaseSearchRequestParams & {
       }
   );
 
-export type LinkupSearchResponse<T> = T extends { outputType: 'structured'; includeSources: true }
-  ? StructuredWithSources
-  : T extends { outputType: 'structured' }
-    ? Structured
-    : T extends { outputType: 'sourcedAnswer' }
-      ? SourcedAnswer
-      : SearchResults;
+export type LinkupSearchResponse<T> = T extends { outputType: 'structured' }
+  ? T extends { includeSources: true }
+    ? StructuredWithSources
+    : T extends { includeSources?: false | undefined }
+      ? Structured
+      : Structured | StructuredWithSources
+  : T extends { outputType: 'sourcedAnswer' }
+    ? SourcedAnswer
+    : SearchResults;
 
 export type SearchResults = {
   results: (TextSearchResult | ImageSearchResult)[];
