@@ -21,11 +21,22 @@ import {
   LinkupUnknownError,
 } from '../errors';
 import { LinkupClient } from '../linkup-client';
-import type { SearchParams, Source } from '../types';
+import type {
+  LinkupSearchResponse,
+  SearchParams,
+  Source,
+  Structured,
+  StructuredWithSources,
+} from '../types';
 import { refineError } from '../utils/refine-error.utils';
 import type { X402Signer } from '../x402/types';
 
 jest.mock('axios');
+
+type IsExact<T, U> =
+  (<V>() => V extends T ? 1 : 2) extends <V>() => V extends U ? 1 : 2 ? true : false;
+
+const expectExactType = <_T extends true>() => undefined;
 
 jest.mock('@x402/core/http', () => ({
   decodePaymentRequiredHeader: jest.fn((header: string) => ({ decoded: header })),
@@ -57,6 +68,16 @@ describe('LinkupClient', () => {
   });
 
   describe('search method', () => {
+    it('should type a dynamic includeSources response as both possible shapes', () => {
+      type DynamicStructuredParams = Extract<SearchParams, { outputType: 'structured' }> & {
+        includeSources: boolean;
+      };
+
+      expectExactType<
+        IsExact<LinkupSearchResponse<DynamicStructuredParams>, Structured | StructuredWithSources>
+      >();
+    });
+
     it('should make a successful API call with correct parameters', async () => {
       mockAxiosInstance.post.mockResolvedValueOnce({
         data: { answer: '' },
