@@ -64,7 +64,7 @@
   },
   "dependencies": {
     "@x402/core": "^2.6.0",
-    "axios": "^1.8.2",
+    "axios": "^1.21.0",
     "zod": "^3.24.1",
     "zod-to-json-schema": "^3.24.1"
   },
